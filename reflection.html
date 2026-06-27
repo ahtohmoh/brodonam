@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Brodonam — What the film left behind</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #060609;
+      --border:    rgba(255,255,255,0.07);
+      --border-h:  rgba(255,255,255,0.18);
+      --text:      rgba(255,255,255,0.84);
+      --text-dim:  rgba(255,255,255,0.48);
+      --text-mute: rgba(255,255,255,0.26);
+      --accent:    #C09060;
+      --accent-bg: rgba(192,144,96,0.10);
+      --psych:     #8A78A8;
+      --psych-bg:  rgba(138,120,168,0.08);
+      --grid:      rgba(255,255,255,0.042);
+      --sans:      'Inter', -apple-system, sans-serif;
+      --serif:     var(--sans);
+    }
+
+    html { background: var(--bg); }
+    body {
+      min-height: 100vh; background: var(--bg);
+      color: var(--text); font-family: var(--sans);
+      font-weight: 300; -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    .grid-bg {
+      position: fixed; inset: 0; pointer-events: none; z-index: 0;
+      background-image:
+        linear-gradient(var(--grid) 1px, transparent 1px),
+        linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+      background-size: 40px 40px;
+    }
+
+    /* ─── Nav ─── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0;
+      height: 56px; z-index: 50;
+      background: rgba(6,6,9,0.96);
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center;
+      padding: 0 28px; gap: 20px;
+    }
+    .nav-logo {
+      font-size: 10px; font-weight: 400; letter-spacing: 0.28em;
+      text-transform: uppercase; color: rgba(255,255,255,0.24);
+      text-decoration: none;
+    }
+    .nav-center {
+      flex: 1; text-align: center;
+      font-size: 9px; font-weight: 400; letter-spacing: 0.18em;
+      text-transform: uppercase; color: rgba(255,255,255,0.28);
+    }
+    .nav-right { margin-left: auto; display: flex; gap: 20px; align-items: center; }
+    .nav-btn {
+      font-size: 9px; font-weight: 400; letter-spacing: 0.16em;
+      text-transform: uppercase; color: rgba(255,255,255,0.32);
+      text-decoration: none; transition: color 0.2s;
+    }
+    .nav-btn:hover { color: rgba(255,255,255,0.65); }
+
+    /* ─── Main ─── */
+    main {
+      position: relative; z-index: 1;
+      padding-top: 96px; padding-bottom: 80px;
+      max-width: 720px; margin: 0 auto; padding-left: 28px; padding-right: 28px;
+    }
+
+    /* ─── Hero Poster ─── */
+    .poster-hero {
+      width: 100%; height: clamp(180px, 28vw, 260px);
+      position: relative; overflow: hidden; margin-bottom: 36px;
+    }
+    .poster-bg {
+      position: absolute; inset: 0;
+      background: linear-gradient(155deg, #1a0a2e, #0d0f2a, #060508);
+    }
+    .poster-grain {
+      position: absolute; inset: 0; opacity: 0.06;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    }
+    .poster-overlay {
+      position: absolute; inset: 0;
+      background: linear-gradient(to right, rgba(6,6,9,0.9) 0%, rgba(6,6,9,0.3) 60%, rgba(6,6,9,0.05) 100%),
+                  linear-gradient(to top, rgba(6,6,9,0.8) 0%, transparent 50%);
+    }
+    .poster-info {
+      position: absolute; bottom: 24px; left: 28px;
+    }
+    .poster-eyebrow {
+      font-size: 8px; font-weight: 400; letter-spacing: 0.2em;
+      text-transform: uppercase; color: var(--psych); opacity: 0.65;
+      margin-bottom: 8px;
+    }
+    .poster-title {
+      font-size: clamp(18px, 3vw, 26px);
+      font-weight: 300; color: rgba(255,255,255,0.85);
+      line-height: 1.3; max-width: 420px;
+    }
+    .poster-meta {
+      margin-top: 8px; font-size: 9px; font-weight: 400;
+      letter-spacing: 0.14em; text-transform: uppercase;
+      color: rgba(255,255,255,0.3);
+    }
+
+    /* ─── Completion Banner ─── */
+    .completion-banner {
+      border: 1px solid rgba(192,144,96,0.2);
+      background: rgba(192,144,96,0.05);
+      padding: 22px 24px; margin-bottom: 40px;
+      display: flex; gap: 16px; align-items: flex-start;
+    }
+    .completion-dot {
+      width: 6px; height: 6px; background: var(--accent);
+      border-radius: 50%; flex-shrink: 0; margin-top: 6px;
+    }
+    .completion-text {
+      font-size: 15px; font-weight: 300;
+      color: rgba(255,255,255,0.68); line-height: 1.6;
+    }
+
+    /* ─── Emotional Check ─── */
+    .section { margin-bottom: 44px; }
+    .section-label {
+      font-size: 9px; font-weight: 400; letter-spacing: 0.2em;
+      text-transform: uppercase; color: rgba(255,255,255,0.36);
+      margin-bottom: 18px;
+    }
+
+    .emotion-compare {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+      margin-bottom: 12px;
+    }
+    .emotion-block {
+      border: 1px solid var(--border); padding: 18px 20px;
+    }
+    .emotion-block-label {
+      font-size: 8px; font-weight: 400; letter-spacing: 0.18em;
+      text-transform: uppercase; margin-bottom: 8px;
+    }
+    .emotion-block.before .emotion-block-label { color: rgba(255,255,255,0.28); }
+    .emotion-block.after  .emotion-block-label { color: var(--psych); opacity: 0.7; }
+    .emotion-block-value {
+      font-size: 14px; font-weight: 300; color: var(--text);
+      line-height: 1.4;
+    }
+
+    /* ─── Lessons ─── */
+    .lessons-list { display: flex; flex-direction: column; gap: 8px; }
+    .lesson-item {
+      border: 1px solid var(--border);
+      background: transparent; cursor: pointer;
+      transition: border-color 0.22s;
+      overflow: hidden;
+    }
+    .lesson-item:hover { border-color: var(--border-h); }
+    .lesson-item.open { border-color: rgba(138,120,168,0.25); background: var(--psych-bg); }
+
+    .lesson-header {
+      display: flex; align-items: center; gap: 14px;
+      padding: 16px 20px; width: 100%; text-align: left;
+      background: none; border: none; cursor: pointer; font-family: var(--sans);
+    }
+    .lesson-num {
+      font-size: 10px; font-weight: 400; letter-spacing: 0.14em;
+      color: var(--psych); opacity: 0.6; flex-shrink: 0; min-width: 20px;
+    }
+    .lesson-title {
+      flex: 1; font-size: 13px; font-weight: 300; color: var(--text);
+      line-height: 1.45; text-align: left;
+    }
+    .lesson-arrow {
+      font-size: 10px; color: var(--text-mute); flex-shrink: 0;
+      transition: transform 0.3s ease;
+    }
+    .lesson-item.open .lesson-arrow { transform: rotate(180deg); }
+
+    .lesson-body {
+      max-height: 0; overflow: hidden;
+      transition: max-height 0.38s cubic-bezier(0.22,1,0.36,1);
+    }
+    .lesson-item.open .lesson-body { max-height: 300px; }
+    .lesson-body-inner {
+      padding: 0 20px 18px 54px;
+      font-size: 12px; font-weight: 300;
+      color: rgba(255,255,255,0.55); line-height: 1.7;
+    }
+
+    /* ─── Action Points ─── */
+    .actions-list { display: flex; flex-direction: column; gap: 8px; }
+    .action-item {
+      display: flex; gap: 16px; align-items: flex-start;
+      padding: 16px 20px; border: 1px solid var(--border);
+      cursor: pointer; transition: all 0.22s;
+    }
+    .action-item:hover { border-color: var(--border-h); }
+    .action-item.done { border-color: rgba(192,144,96,0.2); background: var(--accent-bg); }
+    .action-checkbox {
+      width: 16px; height: 16px; flex-shrink: 0; margin-top: 1px;
+      border: 1px solid rgba(255,255,255,0.2); cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.2s; font-size: 9px;
+    }
+    .action-item.done .action-checkbox {
+      border-color: var(--accent); color: var(--accent);
+    }
+    .action-text {
+      font-size: 13px; font-weight: 300; color: var(--text); line-height: 1.5;
+    }
+    .action-item.done .action-text { color: var(--text-dim); }
+
+    /* ─── Share / Save ─── */
+    .bottom-actions {
+      display: flex; gap: 10px; flex-wrap: wrap; margin-top: 48px;
+    }
+    .bact-btn {
+      font-family: var(--sans); font-size: 9px; font-weight: 400;
+      letter-spacing: 0.18em; text-transform: uppercase;
+      padding: 12px 24px; cursor: pointer; border: 1px solid var(--border);
+      background: transparent; color: rgba(255,255,255,0.5);
+      text-decoration: none; display: inline-block;
+      transition: all 0.22s;
+    }
+    .bact-btn:hover { border-color: var(--border-h); color: rgba(255,255,255,0.82); }
+    .bact-btn.primary {
+      background: rgba(255,255,255,0.88); color: #060609; border-color: transparent;
+    }
+    .bact-btn.primary:hover { background: #fff; }
+
+    /* ─── Journal prompt ─── */
+    .journal-block {
+      border: 1px solid rgba(138,120,168,0.18);
+      background: var(--psych-bg); padding: 24px;
+      margin-top: 40px;
+    }
+    .journal-label {
+      font-size: 8px; font-weight: 400; letter-spacing: 0.2em;
+      text-transform: uppercase; color: var(--psych); opacity: 0.65;
+      margin-bottom: 10px;
+    }
+    .journal-prompt {
+      font-size: 14px; font-weight: 300;
+      color: rgba(255,255,255,0.65); line-height: 1.6; margin-bottom: 18px;
+    }
+    .journal-input {
+      width: 100%; font-family: var(--sans); font-size: 13px;
+      font-weight: 300; color: var(--text); background: transparent;
+      border: none; border-bottom: 1px solid rgba(255,255,255,0.12);
+      padding: 5px 0 9px; outline: none; resize: none;
+      min-height: 60px; line-height: 1.65;
+    }
+    .journal-input::placeholder { color: var(--text-mute); }
+    .journal-input:focus { border-bottom-color: rgba(255,255,255,0.35); }
+  </style>
+</head>
+<body>
+  <div class="grid-bg"></div>
+
+  <!-- ── Nav ── -->
+  <nav>
+    <a class="nav-logo" href="index.html">Brodonam</a>
+    <span class="nav-center">What the film left behind</span>
+    <div class="nav-right">
+      <a class="nav-btn" href="home.html">Discover</a>
+      <a class="nav-btn" href="library.html">Journey</a>
+    </div>
+  </nav>
+
+  <main>
+
+    <!-- Poster Hero -->
+    <div class="poster-hero">
+      <div class="poster-bg" id="posterBg"></div>
+      <div class="poster-grain"></div>
+      <div class="poster-overlay"></div>
+      <div class="poster-info">
+        <div class="poster-eyebrow" id="posterEyebrow">Grief · Identity · 2 hr 8 min</div>
+        <div class="poster-title" id="posterTitle">"Fear of losing someone before you were ready"</div>
+        <div class="poster-meta" id="posterMeta">Completed today · 4 insights captured</div>
+      </div>
+    </div>
+
+    <!-- Completion Banner -->
+    <div class="completion-banner">
+      <div class="completion-dot"></div>
+      <p class="completion-text">
+        "You stayed with something difficult tonight — that took courage. The film didn't resolve everything, because grief doesn't. But something shifted. Let's look at what it showed you."
+      </p>
+    </div>
+
+    <!-- Emotional Before / After -->
+    <div class="section">
+      <div class="section-label">Emotional shift</div>
+      <div class="emotion-compare">
+        <div class="emotion-block before">
+          <div class="emotion-block-label">Before</div>
+          <div class="emotion-block-value">Grief with nowhere to go. A heaviness without a name.</div>
+        </div>
+        <div class="emotion-block after">
+          <div class="emotion-block-label">After</div>
+          <div class="emotion-block-value">Something loosened. Not resolved — but maybe witnessed.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 5 Lessons -->
+    <div class="section">
+      <div class="section-label">5 things the film taught you tonight</div>
+      <div class="lessons-list" id="lessonsList"></div>
+    </div>
+
+    <!-- Journal prompt -->
+    <div class="journal-block">
+      <div class="journal-label">⬡ Write it out</div>
+      <p class="journal-prompt">"If I could speak freely — without fear of reaction, without needing to protect anyone — what would I say to the person I've been grieving?"</p>
+      <textarea class="journal-input" placeholder="Start anywhere. There's no wrong way to begin."></textarea>
+    </div>
+
+    <!-- 7 Action Points -->
+    <div class="section" style="margin-top:40px">
+      <div class="section-label">7 things to carry forward</div>
+      <div class="actions-list" id="actionsList"></div>
+    </div>
+
+    <!-- Bottom actions -->
+    <div class="bottom-actions">
+      <a class="bact-btn primary" href="home.html">Find my next film</a>
+      <a class="bact-btn" href="library.html">Save to journey</a>
+      <a class="bact-btn" href="couples.html">Share with partner</a>
+    </div>
+
+  </main>
+
+  <script>
+  const LESSONS = [
+    {
+      title: "The memories we try to erase are often the ones teaching us the most",
+      body: "When we move toward forgetting — whether through busyness, numbness, or distance — we don't lose the wound. We just lose access to what it was trying to show us. This film asks you to consider: what if remembering is not punishment, but instruction?"
+    },
+    {
+      title: "Love is not made permanent by holding on",
+      body: "The deepest form of love may be the capacity to let someone go — fully, without diminishing what was. Holding on out of fear is different from holding on out of love. The film is asking you to sit with that difference."
+    },
+    {
+      title: "What we run from returns until we turn and face it",
+      body: "Grief doesn't leave because we ignore it. It waits. The avoidance of pain is itself a form of pain — just quieter, slower, more diffuse. The film shows what happens when we finally stop moving long enough to feel."
+    },
+    {
+      title: "The people who hurt us most often mirror our own wounds",
+      body: "The characters who frustrate you most in a film are often reflecting something unresolved in you. Notice who you judged in this story. That judgment is information."
+    },
+    {
+      title: "Beginning again is not a betrayal of what was",
+      body: "There is a grief that comes from choosing to continue — as if moving forward erases what came before. It doesn't. The next chapter is not the deletion of the previous one. It is what comes after it is fully held."
+    }
+  ];
+
+  const ACTIONS = [
+    "Write a letter to the person or thing you've been grieving — don't send it, just write it. Give the grief somewhere to go.",
+    "Identify one memory you've been trying to avoid. Sit with it for 5 minutes without judgment — just let it be there.",
+    "Ask yourself: what did this loss teach me that I want to keep? Write down at least one answer.",
+    "Share one thing you've never told someone close to you about how this has felt. Even a fragment.",
+    "Find a photograph or object that holds a happy memory of what you've lost. Place it somewhere visible for this week.",
+    "Journal to this prompt: 'If I were allowed to feel the full weight of this grief for one hour, without it meaning anything about my strength, what would I feel?'",
+    "This week, do one thing the version of you before this loss would have loved — not to escape grief, but to honour who you still are."
+  ];
+
+  const lessonsList = document.getElementById('lessonsList');
+  LESSONS.forEach((l, i) => {
+    const item = document.createElement('div');
+    item.className = 'lesson-item';
+    item.innerHTML = `
+      <button class="lesson-header" onclick="toggleLesson(this)">
+        <span class="lesson-num">0${i+1}</span>
+        <span class="lesson-title">${l.title}</span>
+        <span class="lesson-arrow">▾</span>
+      </button>
+      <div class="lesson-body">
+        <div class="lesson-body-inner">${l.body}</div>
+      </div>`;
+    lessonsList.appendChild(item);
+  });
+
+  function toggleLesson(btn) {
+    const item = btn.closest('.lesson-item');
+    const wasOpen = item.classList.contains('open');
+    document.querySelectorAll('.lesson-item').forEach(i => i.classList.remove('open'));
+    if (!wasOpen) item.classList.add('open');
+  }
+
+  const actionsList = document.getElementById('actionsList');
+  ACTIONS.forEach((a, i) => {
+    const item = document.createElement('div');
+    item.className = 'action-item';
+    item.innerHTML = `
+      <div class="action-checkbox" onclick="toggleAction(this.closest('.action-item'))"></div>
+      <div class="action-text">${a}</div>`;
+    actionsList.appendChild(item);
+  });
+
+  function toggleAction(item) {
+    const done = item.classList.toggle('done');
+    item.querySelector('.action-checkbox').textContent = done ? '✓' : '';
+  }
+
+  /* ── Personalise from last movie ── */
+  try {
+    const lastMovie = JSON.parse(localStorage.getItem('brodonam_last_movie') || 'null');
+    const sessions  = JSON.parse(localStorage.getItem('brodonam_sessions') || '[]');
+    const latest    = sessions[0];
+
+    if (lastMovie) {
+      const titleEl = document.getElementById('posterTitle');
+      if (titleEl) titleEl.textContent = `"${lastMovie.trigger}"`;
+
+      const eyeEl = document.getElementById('posterEyebrow');
+      if (eyeEl && lastMovie.categories) eyeEl.textContent = lastMovie.categories.join(' · ');
+    }
+
+    if (latest) {
+      const metaEl = document.getElementById('posterMeta');
+      if (metaEl) {
+        const insightCount = latest.insights || 0;
+        const dateStr = new Date(latest.date).toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
+        metaEl.textContent = `Completed ${dateStr} · ${insightCount} insight${insightCount !== 1 ? 's' : ''} captured`;
+      }
+    }
+
+    /* Personalise emotional shift based on profile */
+    const profile = JSON.parse(localStorage.getItem('brodonam_profile') || 'null');
+    if (profile) {
+      const BEFORE_TEXTS = {
+        grief:        'Grief with nowhere to go. A heaviness without a name.',
+        anxiety:      'A mind that wouldn\'t quiet. Something restless underneath everything.',
+        relationship: 'Distance where there should be closeness. Words unsaid, building.',
+        disconnection:'The feeling of being in the room but somewhere else entirely.',
+        identity:     'Uncertainty about the shape of who you\'re becoming.',
+        family:       'An old wound that no one named, but everyone felt.',
+        'self-worth': 'The quiet voice that said you weren\'t quite enough.',
+        numbness:     'The strange flatness that sits where feeling should be.'
+      };
+      const AFTER_TEXTS = {
+        grief:        'Something loosened. Not resolved — but maybe witnessed.',
+        anxiety:      'A small stillness opened. The noise hasn\'t gone — but there\'s a gap in it.',
+        relationship: 'Something named that had been unnamed. That\'s a beginning.',
+        disconnection:'A moment of being seen — even if just by a story.',
+        identity:     'A question became less frightening. Maybe because someone else asked it too.',
+        family:       'An exhale. Whatever the film surfaced, it\'s held more gently now.',
+        'self-worth': 'A different kind of evidence. The film said you were worth the story.',
+        numbness:     'A flicker. Something moved where nothing had before.'
+      };
+      const em = profile.emotion || 'grief';
+      const beforeEl = document.querySelector('.emotion-block.before .emotion-block-value');
+      const afterEl  = document.querySelector('.emotion-block.after .emotion-block-value');
+      if (beforeEl && BEFORE_TEXTS[em]) beforeEl.textContent = BEFORE_TEXTS[em];
+      if (afterEl  && AFTER_TEXTS[em])  afterEl.textContent  = AFTER_TEXTS[em];
+    }
+  } catch(e) {}
+  </script>
+</body>
+</html>

@@ -1,0 +1,43 @@
+{
+  "manifest_version": 3,
+  "name": "Brodonam Companion",
+  "version": "0.1.0",
+  "description": "Therapeutic insights surface at the right moments while you watch on Netflix, Prime Video, or Apple TV.",
+  "permissions": ["storage", "scripting", "tabs"],
+  "host_permissions": [
+    "https://www.netflix.com/*",
+    "https://www.amazon.com/*",
+    "https://tv.apple.com/*",
+    "https://api.brodonam.local/*",
+    "http://localhost:3001/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://www.netflix.com/watch/*"],
+      "js": ["content-netflix.js"]
+    },
+    {
+      "matches": ["https://www.amazon.com/gp/video/detail/*", "https://www.amazon.com/Amazon-Video/*"],
+      "js": ["content-prime.js"]
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Brodonam Companion",
+    "default_icon": {
+      "16":  "icon-128.png",
+      "32":  "icon-128.png",
+      "48":  "icon-128.png",
+      "128": "icon-128.png"
+    }
+  },
+  "icons": {
+    "16":  "icon-128.png",
+    "32":  "icon-128.png",
+    "48":  "icon-128.png",
+    "128": "icon-128.png"
+  }
+}

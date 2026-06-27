@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Brodonam — Partner Session</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #060609;
+      --border:    rgba(255,255,255,0.07);
+      --border-h:  rgba(255,255,255,0.20);
+      --text:      rgba(255,255,255,0.84);
+      --text-dim:  rgba(255,255,255,0.48);
+      --text-mute: rgba(255,255,255,0.26);
+      --accent:    #C09060;
+      --accent-bg: rgba(192,144,96,0.10);
+      --psych:     #8A78A8;
+      --psych-bg:  rgba(138,120,168,0.08);
+      --grid:      rgba(255,255,255,0.042);
+      --sans:      'Inter', -apple-system, sans-serif;
+      --serif:     var(--sans);
+    }
+
+    html { background: var(--bg); }
+    body {
+      min-height: 100vh; background: var(--bg);
+      color: var(--text); font-family: var(--sans);
+      font-weight: 300; -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    .grid-bg {
+      position: fixed; inset: 0; pointer-events: none; z-index: 0;
+      background-image:
+        linear-gradient(var(--grid) 1px, transparent 1px),
+        linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+      background-size: 40px 40px;
+    }
+
+    /* ─── Nav ─── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; height: 56px; z-index: 50;
+      background: rgba(6,6,9,0.96); border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; padding: 0 28px; gap: 20px;
+    }
+    .nav-logo { font-size: 10px; font-weight: 400; letter-spacing: 0.28em; text-transform: uppercase; color: rgba(255,255,255,0.24); text-decoration: none; }
+    .nav-links { display: flex; gap: 22px; margin-left: 24px; }
+    .nav-link { font-size: 9px; font-weight: 400; letter-spacing: 0.16em; text-transform: uppercase; color: rgba(255,255,255,0.3); text-decoration: none; transition: color 0.2s; }
+    .nav-link:hover, .nav-link.active { color: rgba(255,255,255,0.68); }
+    .nav-right { margin-left: auto; display: flex; gap: 20px; align-items: center; }
+    .nav-avatar { width: 28px; height: 28px; border: 1px solid var(--border-h); display: flex; align-items: center; justify-content: center; font-size: 10px; color: rgba(255,255,255,0.45); }
+
+    /* ─── Main ─── */
+    main {
+      position: relative; z-index: 1;
+      padding: 96px 28px 80px;
+      max-width: 720px; margin: 0 auto;
+    }
+
+    /* ─── Section ─── */
+    .page-eyebrow {
+      font-size: 9px; font-weight: 400; letter-spacing: 0.2em;
+      text-transform: uppercase; color: var(--psych); opacity: 0.65;
+      margin-bottom: 12px;
+    }
+    .page-title {
+      font-size: clamp(20px, 3.5vw, 30px); font-weight: 300;
+      color: rgba(255,255,255,0.82); line-height: 1.35; margin-bottom: 14px;
+    }
+    .page-sub {
+      font-size: 13px; font-weight: 300;
+      color: rgba(255,255,255,0.45); line-height: 1.65;
+      max-width: 520px; margin-bottom: 40px;
+    }
+
+    /* ─── Mode Select ─── */
+    .mode-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 40px; }
+    .mode-card {
+      font-family: var(--sans); text-align: left;
+      background: transparent; border: 1px solid var(--border);
+      padding: 20px 22px; cursor: pointer;
+      transition: all 0.22s;
+    }
+    .mode-card:hover { border-color: var(--border-h); background: rgba(255,255,255,0.022); }
+    .mode-card.active { border-color: rgba(138,120,168,0.35); background: var(--psych-bg); }
+    .mode-card-icon { font-size: 20px; margin-bottom: 10px; }
+    .mode-card-title { font-size: 14px; font-weight: 300; color: var(--text); margin-bottom: 4px; }
+    .mode-card-sub { font-size: 10px; color: var(--text-mute); letter-spacing: 0.04em; line-height: 1.5; }
+
+    /* ─── Divider ─── */
+    .divider { height: 1px; background: var(--border); margin: 36px 0; }
+
+    /* ─── Panels ─── */
+    .panel { display: none; }
+    .panel.active { display: block; }
+
+    /* ─── Invite panel ─── */
+    .invite-block {
+      border: 1px solid rgba(192,144,96,0.2);
+      background: rgba(192,144,96,0.05);
+      padding: 28px; margin-bottom: 24px;
+    }
+    .invite-label {
+      font-size: 9px; font-weight: 400; letter-spacing: 0.18em;
+      text-transform: uppercase; color: var(--accent); opacity: 0.7;
+      margin-bottom: 18px;
+    }
+    .invite-code {
+      font-size: clamp(28px, 6vw, 48px); font-weight: 300;
+      letter-spacing: 0.18em; color: rgba(255,255,255,0.82);
+      margin-bottom: 14px;
+    }
+    .invite-sub {
+      font-size: 11px; font-weight: 300;
+      color: rgba(255,255,255,0.38); line-height: 1.6;
+    }
+    .copy-btn {
+      font-family: var(--sans); font-size: 9px; font-weight: 400;
+      letter-spacing: 0.18em; text-transform: uppercase;
+      color: var(--accent); background: none;
+      border: 1px solid rgba(192,144,96,0.28);
+      padding: 10px 20px; cursor: pointer; margin-top: 18px;
+      transition: all 0.22s;
+    }
+    .copy-btn:hover { background: var(--accent-bg); border-color: rgba(192,144,96,0.5); }
+
+    /* ─── Partner status ─── */
+    .partner-status {
+      display: flex; gap: 14px; align-items: center;
+      border: 1px solid var(--border); padding: 16px 20px;
+      margin-bottom: 24px;
+    }
+    .status-dot {
+      width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+    }
+    .status-dot.waiting { background: rgba(255,255,255,0.2); }
+    .status-dot.joined  { background: #7CB87C; animation: pulse 2s ease-in-out infinite; }
+    @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.4;} }
+    .status-text { font-size: 13px; font-weight: 300; color: var(--text-dim); }
+    .status-text strong { color: var(--text); font-weight: 300; }
+
+    /* ─── How it works ─── */
+    .how-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 24px; }
+    .how-item {
+      border: 1px solid var(--border); padding: 16px 20px;
+      display: flex; gap: 16px; align-items: flex-start;
+    }
+    .how-num {
+      font-size: 10px; font-weight: 400; letter-spacing: 0.14em;
+      color: var(--psych); opacity: 0.6; flex-shrink: 0; min-width: 22px;
+    }
+    .how-text { font-size: 13px; font-weight: 300; color: var(--text-dim); line-height: 1.5; }
+
+    /* ─── Topic exploration ─── */
+    .topics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 24px; }
+    .topic-chip {
+      font-family: var(--sans); font-size: 10px; font-weight: 400;
+      letter-spacing: 0.1em; color: rgba(255,255,255,0.52); background: transparent;
+      border: 1px solid var(--border); padding: 12px 16px; cursor: pointer;
+      transition: all 0.18s; text-align: left; line-height: 1.4;
+    }
+    .topic-chip:hover { border-color: var(--border-h); color: rgba(255,255,255,0.8); background: rgba(255,255,255,0.022); }
+    .topic-chip.on { border-color: rgba(138,120,168,0.35); color: var(--psych); background: var(--psych-bg); }
+
+    /* ─── Discussion prompts ─── */
+    .prompt-block {
+      border: 1px solid rgba(138,120,168,0.18);
+      background: var(--psych-bg); padding: 24px; margin-bottom: 24px;
+    }
+    .prompt-label {
+      font-size: 8px; font-weight: 400; letter-spacing: 0.2em; text-transform: uppercase;
+      color: var(--psych); opacity: 0.65; margin-bottom: 16px;
+    }
+    .prompt-item {
+      font-size: 14px; font-weight: 300; color: rgba(255,255,255,0.65);
+      line-height: 1.6; padding: 14px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .prompt-item:last-child { border-bottom: none; padding-bottom: 0; }
+
+    /* ─── Start button ─── */
+    .start-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 24px; }
+    .start-btn {
+      font-family: var(--sans); font-size: 10px; font-weight: 400;
+      letter-spacing: 0.18em; text-transform: uppercase;
+      padding: 13px 28px; cursor: pointer; border: 1px solid var(--border);
+      background: rgba(255,255,255,0.88); color: #060609; border-color: transparent;
+      text-decoration: none; display: inline-block; transition: all 0.22s;
+    }
+    .start-btn:hover { background: #fff; }
+    .secondary-btn {
+      font-family: var(--sans); font-size: 10px; font-weight: 400;
+      letter-spacing: 0.18em; text-transform: uppercase;
+      padding: 13px 24px; cursor: pointer; border: 1px solid var(--border);
+      background: transparent; color: rgba(255,255,255,0.48);
+      text-decoration: none; display: inline-block; transition: all 0.22s;
+    }
+    .secondary-btn:hover { border-color: var(--border-h); color: rgba(255,255,255,0.8); }
+
+    /* ─── Third Eye section ─── */
+    .third-eye {
+      border: 1px solid rgba(192,144,96,0.18);
+      background: rgba(192,144,96,0.04); padding: 24px; margin-bottom: 24px;
+    }
+    .third-eye-label {
+      font-size: 8px; font-weight: 400; letter-spacing: 0.2em;
+      text-transform: uppercase; color: var(--accent); opacity: 0.7; margin-bottom: 10px;
+    }
+    .third-eye-text {
+      font-size: 13px; font-weight: 300; color: rgba(255,255,255,0.55);
+      line-height: 1.65;
+    }
+    .toggle-row { display: flex; align-items: center; gap: 14px; margin-top: 18px; }
+    .toggle {
+      width: 40px; height: 22px; background: rgba(255,255,255,0.1);
+      border: 1px solid var(--border); position: relative; cursor: pointer;
+      transition: background 0.25s;
+    }
+    .toggle.on { background: var(--accent); border-color: var(--accent); }
+    .toggle-knob {
+      position: absolute; top: 3px; left: 3px; width: 14px; height: 14px;
+      background: rgba(255,255,255,0.6); transition: left 0.25s;
+    }
+    .toggle.on .toggle-knob { left: 21px; background: #fff; }
+    .toggle-label { font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-mute); }
+
+    /* ─── Join panel ─── */
+    .join-field {
+      margin-bottom: 24px;
+    }
+    .join-label { font-size: 9px; font-weight: 400; letter-spacing: 0.18em; text-transform: uppercase; color: rgba(255,255,255,0.38); margin-bottom: 10px; display: block; }
+    .join-input {
+      width: 100%; font-family: var(--sans); font-size: 28px; font-weight: 300;
+      letter-spacing: 0.18em; color: rgba(255,255,255,0.82); background: transparent;
+      border: none; border-bottom: 1px solid rgba(255,255,255,0.13);
+      padding: 5px 0 10px; outline: none;
+      -webkit-appearance: none; border-radius: 0; text-transform: uppercase;
+    }
+    .join-input::placeholder { color: rgba(255,255,255,0.18); font-size: 22px; }
+    .join-input:focus { border-bottom-color: rgba(255,255,255,0.4); }
+  </style>
+</head>
+<body>
+  <div class="grid-bg"></div>
+
+  <nav>
+    <a class="nav-logo" href="index.html">Brodonam</a>
+    <div class="nav-links">
+      <a class="nav-link" href="home.html">Discover</a>
+      <a class="nav-link" href="library.html">Journey</a>
+      <a class="nav-link active" href="couples.html">Partner</a>
+    </div>
+    <div class="nav-right">
+      <div class="nav-avatar">A</div>
+    </div>
+  </nav>
+
+  <main>
+    <div class="page-eyebrow">Partner mode</div>
+    <h1 class="page-title">Some things are easier to feel<br>when you're side by side.</h1>
+    <p class="page-sub">Partner mode lets you and your partner experience the same film together — with Brodonam guiding you each privately, and creating a shared space to talk about what the story brought up. What couples find hard to say directly, cinema often says for them.</p>
+
+    <!-- Mode selection -->
+    <div class="mode-cards">
+      <button class="mode-card active" onclick="selectMode(this,'invite')">
+        <div class="mode-card-icon">✦</div>
+        <div class="mode-card-title">Start a session</div>
+        <div class="mode-card-sub">Create a shared room and invite your partner with a code</div>
+      </button>
+      <button class="mode-card" onclick="selectMode(this,'join')">
+        <div class="mode-card-icon">→</div>
+        <div class="mode-card-title">Join a session</div>
+        <div class="mode-card-sub">Your partner started a room — enter their code to join</div>
+      </button>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- ── Panel: Invite ── -->
+    <div class="panel active" id="panelInvite">
+
+      <div class="invite-block">
+        <div class="invite-label">Your session code</div>
+        <div class="invite-code" id="sessionCode">BRD · 4827</div>
+        <p class="invite-sub">Share this with your partner. Once they join, you'll both see it here. Your experience will be synced — same film, same moments, your own private reflections.</p>
+        <button class="copy-btn" onclick="copyCode()">Copy code</button>
+      </div>
+
+      <div class="partner-status" id="partnerStatus">
+        <div class="status-dot waiting" id="statusDot"></div>
+        <span class="status-text" id="statusText">Waiting for partner to join…</span>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- Topics to explore -->
+      <div style="margin-bottom:18px">
+        <div class="page-eyebrow" style="margin-bottom:12px">What do you want the film to help you explore together?</div>
+        <div class="topics-grid" id="topicsGrid">
+          <button class="topic-chip" onclick="toggleTopic(this)">We struggle to communicate without arguing</button>
+          <button class="topic-chip" onclick="toggleTopic(this)">There are things I need from them that I can't say</button>
+          <button class="topic-chip" onclick="toggleTopic(this)">We've drifted apart and I don't know how to start</button>
+          <button class="topic-chip" onclick="toggleTopic(this)">Past hurt that hasn't been fully addressed</button>
+          <button class="topic-chip" onclick="toggleTopic(this)">We love each other but we're hurting each other</button>
+          <button class="topic-chip" onclick="toggleTopic(this)">I feel unseen in this relationship</button>
+        </div>
+      </div>
+
+      <!-- Third Eye -->
+      <div class="third-eye">
+        <div class="third-eye-label">⬡ Third-eye perspective</div>
+        <p class="third-eye-text">When this is enabled, Brodonam will occasionally pause the film and offer a perspective from outside — like a trusted friend watching the both of you watch the film. This creates a shared reference point that's easier to discuss than direct confrontation.</p>
+        <div class="toggle-row">
+          <div class="toggle on" id="thirdEyeToggle" onclick="toggleThirdEye()">
+            <div class="toggle-knob"></div>
+          </div>
+          <span class="toggle-label">Third-eye mode on</span>
+        </div>
+      </div>
+
+      <!-- Discussion prompts preview -->
+      <div class="prompt-block">
+        <div class="prompt-label">Discussion prompts Brodonam will offer during the film</div>
+        <div class="prompt-item">"What did you notice in yourself when that scene happened? Not what you thought — what did you feel?"</div>
+        <div class="prompt-item">"If the character who just spoke was saying something to you — not to the other character — what were they saying?"</div>
+        <div class="prompt-item">"Is there anything in this film that feels uncomfortably familiar? You don't have to share it — just notice it."</div>
+      </div>
+
+      <!-- How it works -->
+      <div style="margin-bottom:18px">
+        <div class="page-eyebrow" style="margin-bottom:14px">How it works</div>
+        <div class="how-list">
+          <div class="how-item"><span class="how-num">01</span><span class="how-text">Both of you watch the same film in sync — wherever you are</span></div>
+          <div class="how-item"><span class="how-num">02</span><span class="how-text">At key moments, Brodonam pauses and offers you each a private insight, based on what you shared individually</span></div>
+          <div class="how-item"><span class="how-num">03</span><span class="how-text">After each insight, you can optionally share it with your partner — or keep it private</span></div>
+          <div class="how-item"><span class="how-num">04</span><span class="how-text">At the end, Brodonam surfaces a joint reflection — things both of you resonated with — and offers discussion questions</span></div>
+          <div class="how-item"><span class="how-num">05</span><span class="how-text">You each leave with your own action points, and one or two you chose to do together</span></div>
+        </div>
+      </div>
+
+      <div class="start-row">
+        <a class="start-btn" href="player.html" id="startBtn">Start watching</a>
+        <a class="secondary-btn" href="home.html">Choose different film</a>
+      </div>
+    </div>
+
+    <!-- ── Panel: Join ── -->
+    <div class="panel" id="panelJoin">
+      <div style="margin-bottom:32px">
+        <div class="page-eyebrow" style="margin-bottom:12px">Enter your partner's code</div>
+        <p style="font-size:13px;color:rgba(255,255,255,0.42);line-height:1.6;margin-bottom:28px">Your partner started a session and shared a 4-digit code with you. Enter it below to join their room.</p>
+      </div>
+
+      <div class="join-field">
+        <label class="join-label">Session code</label>
+        <input class="join-input" id="joinInput" type="text" placeholder="BRD · ----"
+          maxlength="10" oninput="checkJoinCode(this)">
+      </div>
+
+      <div class="partner-status" id="joinStatus" style="display:none">
+        <div class="status-dot joined"></div>
+        <span class="status-text"><strong>Connected</strong> — your partner is waiting for you</span>
+      </div>
+
+      <div class="start-row">
+        <a class="start-btn" href="player.html" id="joinBtn" style="opacity:0.3;pointer-events:none">Join session</a>
+      </div>
+
+      <div style="margin-top:40px">
+        <div class="page-eyebrow" style="margin-bottom:14px">What joining means for you</div>
+        <div class="how-list">
+          <div class="how-item"><span class="how-num">01</span><span class="how-text">Before the film starts, you'll do your own brief check-in — Brodonam needs to know what you're carrying too</span></div>
+          <div class="how-item"><span class="how-num">02</span><span class="how-text">Your reflections are private unless you choose to share them</span></div>
+          <div class="how-item"><span class="how-num">03</span><span class="how-text">You both get your own insights, your own action points, and a shared reflection at the end</span></div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <script>
+  let thirdEyeOn = true;
+
+  function selectMode(el, panel) {
+    document.querySelectorAll('.mode-card').forEach(c => c.classList.remove('active'));
+    el.classList.add('active');
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.getElementById('panel' + panel.charAt(0).toUpperCase() + panel.slice(1)).classList.add('active');
+  }
+
+  function copyCode() {
+    navigator.clipboard?.writeText('BRD-4827').catch(() => {});
+    const btn = event.currentTarget;
+    btn.textContent = 'Copied ✓'; btn.style.opacity = '0.5';
+    setTimeout(() => { btn.textContent = 'Copy code'; btn.style.opacity = '1'; }, 2000);
+  }
+
+  function toggleTopic(el) { el.classList.toggle('on'); }
+
+  function toggleThirdEye() {
+    thirdEyeOn = !thirdEyeOn;
+    const t = document.getElementById('thirdEyeToggle');
+    t.classList.toggle('on', thirdEyeOn);
+    t.nextElementSibling.textContent = thirdEyeOn ? 'Third-eye mode on' : 'Third-eye mode off';
+  }
+
+  function checkJoinCode(input) {
+    const val = input.value.replace(/[^a-zA-Z0-9]/g,'');
+    const isValid = val.length >= 4;
+    const btn = document.getElementById('joinBtn');
+    const status = document.getElementById('joinStatus');
+    if (isValid) {
+      btn.style.opacity = '1'; btn.style.pointerEvents = 'auto';
+      status.style.display = 'flex';
+    } else {
+      btn.style.opacity = '0.3'; btn.style.pointerEvents = 'none';
+      status.style.display = 'none';
+    }
+  }
+
+  /* Simulate partner joining */
+  setTimeout(() => {
+    const dot = document.getElementById('statusDot');
+    const txt = document.getElementById('statusText');
+    if (dot && txt) {
+      dot.className = 'status-dot joined';
+      txt.innerHTML = '<strong>Partner connected</strong> — you\'re both ready to begin';
+    }
+  }, 6000);
+  </script>
+</body>
+</html>

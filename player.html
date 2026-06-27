@@ -1,0 +1,1367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Brodonam — Now Playing</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #030305;
+      --border:    rgba(255,255,255,0.06);
+      --border-h:  rgba(255,255,255,0.16);
+      --text:      rgba(255,255,255,0.84);
+      --text-dim:  rgba(255,255,255,0.48);
+      --text-mute: rgba(255,255,255,0.26);
+      --accent:    #C09060;
+      --accent-bg: rgba(192,144,96,0.10);
+      --psych:     #8A78A8;
+      --psych-bg:  rgba(138,120,168,0.10);
+      --sans:      'Inter', -apple-system, sans-serif;
+      --serif:     var(--sans);
+    }
+
+    html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(--text); font-family: var(--sans); font-weight: 300; -webkit-font-smoothing: antialiased; }
+
+    /* ─── Shell ─── */
+    .player-shell { display: flex; height: 100vh; height: 100dvh; }
+
+    /* ═══════════════════════════════
+       VIDEO AREA
+    ═══════════════════════════════ */
+    .video-area {
+      flex: 1; position: relative; overflow: hidden;
+      display: flex; flex-direction: column;
+      background: #020203;
+    }
+
+    /* ── Simulated Video ── */
+    .video-canvas {
+      flex: 1; position: relative; overflow: hidden;
+      cursor: pointer;
+    }
+
+    /* Simulated film gradient (replaces real <video> element) */
+    .video-bg {
+      position: absolute; inset: 0;
+      background: linear-gradient(135deg, #1a0828 0%, #0a1428 20%, #1a0a18 40%, #0a1a0a 65%, #1a1028 100%);
+      background-size: 400% 400%;
+      animation: filmPlay 16s ease-in-out infinite;
+      transition: filter 1.5s ease;
+    }
+    .video-bg.paused { animation-play-state: paused; }
+    .video-bg.dimmed { filter: brightness(0.35); }
+
+    @keyframes filmPlay {
+      0%   { background-position: 0% 50%; }
+      25%  { background-position: 100% 25%; }
+      50%  { background-position: 50% 100%; }
+      75%  { background-position: 25% 0%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    .video-grain {
+      position: absolute; inset: 0; opacity: 0.065; pointer-events: none;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+      background-size: 200px 200px;
+    }
+
+    /* ══════════════════════
+       AMBIENT EDGE LIGHT SYSTEM
+       3 states: idle → approaching → active
+    ══════════════════════ */
+    .edge-light {
+      position: absolute; inset: 0; pointer-events: none; z-index: 6;
+      box-shadow: inset 0 0 0 rgba(192,144,96,0);
+      transition: box-shadow 2.5s ease, opacity 2s ease;
+    }
+    /* 30s before key scene: slow breathing amber glow */
+    .edge-light.approaching {
+      animation: edgeApproach 4s ease-in-out infinite;
+    }
+    @keyframes edgeApproach {
+      0%,100% { box-shadow: inset 0 0 40px 4px rgba(192,144,96,0.10), inset 0 0 80px rgba(192,144,96,0.05); }
+      50%      { box-shadow: inset 0 0 60px 8px rgba(192,144,96,0.22), inset 0 0 120px rgba(192,144,96,0.10); }
+    }
+    /* Active insight: stronger, steadier */
+    .edge-light.insight-active {
+      box-shadow:
+        inset 0 0 80px 16px rgba(192,144,96,0.35),
+        inset 0 0 160px rgba(192,144,96,0.18);
+      animation: none;
+    }
+
+    /* Vignette */
+    .video-vignette {
+      position: absolute; inset: 0; pointer-events: none; z-index: 4;
+      background: radial-gradient(ellipse 82% 82% at 50% 50%, transparent 38%, rgba(3,3,5,0.72) 100%);
+    }
+
+    /* Film title (top-left) */
+    .video-label {
+      position: absolute; top: 20px; left: 24px; z-index: 8; pointer-events: none;
+      opacity: 0; animation: fadeIn 1s ease forwards 1s;
+    }
+    @keyframes fadeIn { to { opacity: 1; } }
+    .video-trigger {
+      font-size: clamp(12px, 1.8vw, 16px); font-weight: 300;
+      color: rgba(255,255,255,0.45); line-height: 1.35; max-width: 360px;
+    }
+    .video-cat {
+      font-size: 8px; font-weight: 400; letter-spacing: 0.18em;
+      text-transform: uppercase; color: var(--psych); opacity: 0.5; margin-top: 3px;
+    }
+
+    /* ══════════════════════
+       FLOATING BRODONAM BUTTON
+       Bottom-right of video — always accessible
+    ══════════════════════ */
+    .brod-float {
+      position: absolute; bottom: 76px; right: 16px; z-index: 20;
+      width: 40px; height: 40px;
+      background: rgba(4,4,7,0.72);
+      backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+      border: 1px solid rgba(255,255,255,0.10);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      transition: border-color 0.4s, box-shadow 0.4s, transform 0.3s;
+    }
+    .brod-float:hover { border-color: rgba(255,255,255,0.22); transform: scale(1.06); }
+    .brod-icon {
+      font-size: 14px; color: rgba(255,255,255,0.35);
+      transition: color 0.4s;
+      user-select: none;
+    }
+
+    /* Approaching state — gentle gold pulse */
+    .brod-float.approaching {
+      border-color: rgba(192,144,96,0.45);
+      animation: brodApproach 2.8s ease-in-out infinite;
+    }
+    .brod-float.approaching .brod-icon { color: var(--accent); }
+    @keyframes brodApproach {
+      0%,100% { box-shadow: 0 0 10px rgba(192,144,96,0.25), 0 0 20px rgba(192,144,96,0.08); transform: scale(1); }
+      50%      { box-shadow: 0 0 20px rgba(192,144,96,0.5),  0 0 40px rgba(192,144,96,0.18); transform: scale(1.05); }
+    }
+
+    /* Active insight state */
+    .brod-float.insight-state {
+      border-color: var(--accent);
+      box-shadow: 0 0 24px rgba(192,144,96,0.6), 0 0 48px rgba(192,144,96,0.2);
+      animation: none;
+    }
+    .brod-float.insight-state .brod-icon { color: var(--accent); }
+
+    /* Tooltip */
+    .brod-tooltip {
+      position: absolute; right: calc(100% + 10px); top: 50%;
+      transform: translateY(-50%);
+      font-size: 8px; letter-spacing: 0.14em; text-transform: uppercase;
+      color: rgba(255,255,255,0.38); white-space: nowrap;
+      background: rgba(4,4,7,0.8);
+      border: 1px solid rgba(255,255,255,0.07);
+      padding: 5px 10px;
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.2s;
+    }
+    .brod-float.approaching .brod-tooltip,
+    .brod-float.insight-state .brod-tooltip { opacity: 1; }
+
+    /* ══════════════════════
+       PLAYER CONTROLS
+    ══════════════════════ */
+    .player-controls {
+      position: absolute; bottom: 0; left: 0; right: 0; z-index: 10;
+      padding: 0 20px 18px;
+      background: linear-gradient(to top, rgba(3,3,5,0.96) 0%, transparent 100%);
+      transition: opacity 0.4s ease;
+    }
+    .player-controls.hidden { opacity: 0; pointer-events: none; }
+
+    /* Progress */
+    .progress-wrap { margin-bottom: 12px; cursor: pointer; padding: 8px 0; }
+    .progress-track {
+      height: 2px; background: rgba(255,255,255,0.12);
+      position: relative;
+    }
+    .progress-fill {
+      height: 100%; background: rgba(255,255,255,0.65);
+      width: 0%; transition: width 0.5s linear;
+    }
+    .insight-markers {
+      position: absolute; top: 50%; transform: translateY(-50%);
+      left: 0; right: 0; pointer-events: none;
+    }
+    .insight-dot {
+      position: absolute; width: 7px; height: 7px;
+      background: var(--accent); border-radius: 50%;
+      top: 50%; transform: translate(-50%, -50%);
+      cursor: pointer; pointer-events: all;
+      box-shadow: 0 0 6px rgba(192,144,96,0.7);
+      transition: transform 0.2s;
+    }
+    .insight-dot:hover { transform: translate(-50%,-50%) scale(1.6); }
+    .insight-dot.triggered { background: rgba(255,255,255,0.5); }
+
+    /* Controls row */
+    .ctrl-row { display: flex; align-items: center; gap: 16px; }
+    .ctrl-btn {
+      font-family: var(--sans); font-size: 9px; font-weight: 400;
+      letter-spacing: 0.16em; text-transform: uppercase;
+      color: rgba(255,255,255,0.38); background: none; border: none;
+      cursor: pointer; transition: color 0.2s; padding: 0;
+    }
+    .ctrl-btn:hover { color: rgba(255,255,255,0.82); }
+    .ctrl-time { font-size: 10px; letter-spacing: 0.06em; color: rgba(255,255,255,0.30); }
+    .ctrl-spacer { flex: 1; }
+    .ctrl-toggle {
+      font-family: var(--sans); font-size: 9px; font-weight: 400;
+      letter-spacing: 0.14em; text-transform: uppercase;
+      color: var(--psych); opacity: 0.6; background: none; border: none;
+      cursor: pointer; transition: opacity 0.2s;
+    }
+    .ctrl-toggle:hover { opacity: 1; }
+
+    /* ═══════════════════════════════
+       SIDEBAR
+    ═══════════════════════════════ */
+    .sidebar {
+      width: 320px; flex-shrink: 0;
+      background: rgba(4,4,7,0.98);
+      border-left: 1px solid var(--border);
+      display: flex; flex-direction: column;
+      transition: width 0.38s cubic-bezier(0.22,1,0.36,1);
+      overflow: hidden;
+    }
+    .sidebar.collapsed { width: 0; }
+
+    .sb-header {
+      padding: 16px 18px 14px;
+      border-bottom: 1px solid var(--border); flex-shrink: 0;
+    }
+    .sb-title {
+      font-size: 8px; font-weight: 400; letter-spacing: 0.18em;
+      text-transform: uppercase; color: var(--psych); opacity: 0.65; margin-bottom: 3px;
+    }
+    .sb-sub { font-size: 11px; font-weight: 300; color: rgba(255,255,255,0.36); }
+
+    /* Framework badge */
+    .framework-badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      font-size: 8px; letter-spacing: 0.14em; text-transform: uppercase;
+      color: var(--accent); opacity: 0; transition: opacity 0.5s;
+      margin-top: 6px;
+    }
+    .framework-badge.show { opacity: 0.7; }
+    .framework-dot { width: 4px; height: 4px; background: var(--accent); border-radius: 50%; }
+
+    .sb-tabs { display: flex; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+    .sb-tab {
+      flex: 1; font-family: var(--sans); font-size: 9px; font-weight: 400;
+      letter-spacing: 0.14em; text-transform: uppercase;
+      color: rgba(255,255,255,0.25); background: none; border: none;
+      padding: 10px 6px; cursor: pointer;
+      border-bottom: 1px solid transparent; margin-bottom: -1px;
+      transition: all 0.2s;
+    }
+    .sb-tab.active { color: rgba(255,255,255,0.72); border-bottom-color: var(--accent); }
+
+    /* Messages */
+    .sb-msgs {
+      flex: 1; overflow-y: auto; padding: 14px 18px;
+      display: flex; flex-direction: column; gap: 10px;
+      scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.05) transparent;
+    }
+    .sb-msgs::-webkit-scrollbar { width: 2px; }
+
+    .sm { max-width: 100%; opacity: 0; animation: smIn 0.32s ease forwards; }
+    @keyframes smIn { from{opacity:0;transform:translateY(5px);} to{opacity:1;transform:translateY(0);} }
+    .sm.ai   { align-self: flex-start; }
+    .sm.user { align-self: flex-end; }
+    .sm-bubble {
+      padding: 9px 12px; font-size: 12px; font-weight: 300; line-height: 1.62;
+    }
+    .sm.ai   .sm-bubble { background: rgba(255,255,255,0.032); border: 1px solid var(--border); border-left: 2px solid rgba(138,120,168,0.3); color: rgba(255,255,255,0.55); }
+    .sm.user .sm-bubble { background: var(--accent-bg); border: 1px solid rgba(192,144,96,0.14); color: rgba(255,255,255,0.65); }
+
+    /* Accessibility — respect reduced-motion preference */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+    :focus-visible {
+      outline: 2px solid rgba(192,144,96,0.55);
+      outline-offset: 2px;
+    }
+
+    /* ═══════════════════════════════
+       CONTENT-WARNING GATE
+       Appears before the film begins; never alarming, always optional.
+    ═══════════════════════════════ */
+    #contentGate {
+      position: fixed; inset: 0; z-index: 9999;
+      background: rgba(3,3,5,0.94);
+      backdrop-filter: blur(14px);
+      display: flex; align-items: center; justify-content: center;
+      padding: 24px;
+      animation: cgIn 0.5s ease-out;
+    }
+    #contentGate.cg-out { animation: cgOut 0.4s ease-in forwards; }
+    @keyframes cgIn  { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes cgOut { from { opacity: 1; } to { opacity: 0; } }
+    .cg-card {
+      max-width: 460px; width: 100%;
+      background: rgba(10,8,12,0.88);
+      border: 1px solid rgba(232,180,140,0.18);
+      padding: 32px 30px;
+      color: rgba(255,255,255,0.78);
+    }
+    .cg-eyebrow {
+      font-size: 9px; letter-spacing: 0.22em; text-transform: uppercase;
+      color: rgba(232,180,140,0.65); margin-bottom: 14px;
+    }
+    .cg-title {
+      font-size: 18px; font-weight: 300; line-height: 1.4;
+      color: rgba(255,255,255,0.88); margin-bottom: 18px;
+    }
+    .cg-body {
+      font-size: 13px; line-height: 1.6;
+      color: rgba(255,255,255,0.58); margin-bottom: 18px;
+    }
+    .cg-list { list-style: none; margin: 0 0 24px; padding: 0; }
+    .cg-flag {
+      font-size: 12px; padding: 7px 11px; margin-bottom: 5px;
+      border-left: 2px solid rgba(232,180,140,0.35);
+      background: rgba(232,180,140,0.05);
+      color: rgba(255,236,216,0.82);
+    }
+    .cg-flag.cg-high { border-left-color: rgba(232,140,140,0.65); background: rgba(232,140,140,0.06); }
+    .cg-flag.cg-med  { border-left-color: rgba(232,180,140,0.45); }
+    .cg-flag.cg-low  { border-left-color: rgba(180,180,200,0.30); background: rgba(255,255,255,0.025); color: rgba(255,255,255,0.62); }
+    .cg-actions { display: flex; gap: 10px; margin-top: 8px; }
+    .cg-secondary, .cg-primary {
+      flex: 1; padding: 12px 16px;
+      font-family: var(--sans); font-size: 12px; font-weight: 300;
+      letter-spacing: 0.06em; text-transform: uppercase;
+      cursor: pointer; transition: background 0.18s, border-color 0.18s;
+    }
+    .cg-secondary {
+      background: transparent; border: 1px solid rgba(255,255,255,0.16);
+      color: rgba(255,255,255,0.68);
+    }
+    .cg-secondary:hover { border-color: rgba(255,255,255,0.32); }
+    .cg-primary {
+      background: rgba(232,180,140,0.14); border: 1px solid rgba(232,180,140,0.42);
+      color: rgba(255,236,216,0.92);
+    }
+    .cg-primary:hover { background: rgba(232,180,140,0.22); border-color: rgba(232,180,140,0.62); }
+
+    /* Crisis-routed AI message in sidebar */
+    .sm.ai.crisis .sm-bubble {
+      background: rgba(232,180,140,0.06);
+      border: 1px solid rgba(232,180,140,0.22);
+      border-left: 2px solid rgba(232,180,140,0.55);
+      color: rgba(255,236,216,0.80);
+    }
+    .crisis-chip {
+      display: block; margin-top: 8px; padding: 7px 10px;
+      font-size: 11px; line-height: 1.45;
+      color: rgba(255,236,216,0.86);
+      background: rgba(232,180,140,0.10);
+      border: 1px solid rgba(232,180,140,0.28);
+      letter-spacing: 0.02em;
+    }
+
+    /* Framework section in AI message */
+    .sm-framework {
+      font-size: 8px; letter-spacing: 0.16em; text-transform: uppercase;
+      color: var(--accent); opacity: 0.6; margin-bottom: 5px;
+    }
+    .sm-reframe {
+      margin-top: 8px; padding: 8px 10px;
+      border-left: 2px solid rgba(192,144,96,0.3);
+      font-size: 11px; color: rgba(255,255,255,0.45);
+      line-height: 1.55;
+    }
+    .sm-question {
+      margin-top: 8px;
+      font-size: 11.5px; color: rgba(138,120,168,0.75);
+    }
+
+    /* Sidebar input */
+    .sb-input-area {
+      padding: 10px 18px 16px;
+      border-top: 1px solid var(--border); flex-shrink: 0;
+    }
+    .sb-hint {
+      font-size: 8px; letter-spacing: 0.14em; text-transform: uppercase;
+      color: rgba(255,255,255,0.18); margin-bottom: 8px;
+    }
+    .sb-input-row { display: flex; gap: 8px; align-items: flex-end; }
+    .sb-input {
+      flex: 1; font-family: var(--sans); font-size: 12px; font-weight: 300;
+      color: rgba(255,255,255,0.55); background: transparent;
+      border: none; border-bottom: 1px solid rgba(255,255,255,0.08);
+      padding: 4px 0 6px; outline: none; resize: none;
+      min-height: 26px; max-height: 72px; line-height: 1.5;
+    }
+    .sb-input::placeholder { color: rgba(255,255,255,0.20); }
+    .sb-send {
+      font-family: var(--sans); font-size: 8px; font-weight: 400;
+      letter-spacing: 0.18em; text-transform: uppercase;
+      color: var(--accent); background: none; border: none;
+      cursor: pointer; transition: opacity 0.2s; flex-shrink: 0;
+    }
+    .sb-send:hover { opacity: 0.6; }
+    .sb-mic {
+      width: 22px; height: 22px; flex-shrink: 0;
+      background: none; border: none; cursor: pointer;
+      color: rgba(255,255,255,0.20); display: flex;
+      align-items: center; justify-content: center;
+      transition: color 0.2s; padding: 0;
+    }
+    .sb-mic:hover { color: rgba(255,255,255,0.5); }
+    .sb-mic.recording {
+      color: var(--accent);
+      animation: micPulse 1.4s ease-in-out infinite;
+    }
+    .sb-mic.on { color: var(--accent); }
+    @keyframes micPulse {
+      0%, 100% { opacity: 0.9; }
+      50%      { opacity: 0.4; }
+    }
+
+    /* ═══════════════════════════════
+       NARRATION OVERLAY
+       Film dims, AI speaks from the bottom
+    ═══════════════════════════════ */
+    .narration-overlay {
+      position: absolute; inset: 0; z-index: 30;
+      pointer-events: none; opacity: 0;
+      transition: opacity 0.8s ease;
+    }
+    .narration-overlay.visible { opacity: 1; pointer-events: all; }
+
+    /* Dim layer — doesn't fully black out, you can still see the film */
+    .narration-dim {
+      position: absolute; inset: 0;
+      background: rgba(3,3,5,0.60);
+      backdrop-filter: blur(1.5px);
+    }
+
+    /* The breathing ambient layer */
+    .narration-breath {
+      position: absolute; inset: 0;
+      animation: breathe 5s ease-in-out infinite;
+      background: radial-gradient(ellipse 70% 50% at 50% 50%, rgba(138,120,168,0.05) 0%, transparent 70%);
+    }
+    @keyframes breathe {
+      0%,100% { opacity: 0.5; transform: scale(1); }
+      50%      { opacity: 1; transform: scale(1.03); }
+    }
+
+    /* Narration content panel — slides up from bottom */
+    .narration-panel {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      padding: 48px 48px 100px;
+      background: linear-gradient(to top, rgba(3,3,5,0.98) 0%, rgba(3,3,5,0.82) 50%, transparent 100%);
+      transform: translateY(30px);
+      transition: transform 0.7s cubic-bezier(0.22,1,0.36,1);
+    }
+    .narration-overlay.visible .narration-panel { transform: translateY(0); }
+
+    .narration-eyebrow {
+      font-size: 8px; font-weight: 400; letter-spacing: 0.22em;
+      text-transform: uppercase; color: var(--accent); opacity: 0.7;
+      display: flex; align-items: center; gap: 10px; margin-bottom: 16px;
+    }
+    .narration-eyebrow::before {
+      content: ''; display: inline-block; width: 24px; height: 1px;
+      background: var(--accent); opacity: 0.5;
+    }
+
+    .narration-text {
+      font-size: clamp(14px, 2vw, 19px); font-weight: 300;
+      color: rgba(255,255,255,0.78); line-height: 1.65;
+      max-width: 680px; margin-bottom: 20px;
+    }
+    .narration-cursor {
+      display: inline-block; width: 1px; height: 1em;
+      background: rgba(255,255,255,0.45); vertical-align: text-bottom;
+      animation: blink 0.9s step-end infinite;
+    }
+    @keyframes blink { 0%,100%{opacity:1;} 50%{opacity:0;} }
+
+    /* Somatic prompt */
+    .narration-somatic {
+      font-size: 11.5px; font-weight: 300;
+      color: rgba(255,255,255,0.42); line-height: 1.6;
+      border-left: 2px solid rgba(138,120,168,0.35);
+      padding-left: 14px; margin-bottom: 22px; max-width: 560px;
+      display: none;
+    }
+    .narration-somatic.show { display: block; }
+
+    /* Action buttons */
+    .narration-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .narr-btn {
+      font-family: var(--sans); font-size: 9px; font-weight: 400;
+      letter-spacing: 0.16em; text-transform: uppercase;
+      padding: 10px 18px; cursor: pointer;
+      border: 1px solid rgba(255,255,255,0.10);
+      background: transparent; color: rgba(255,255,255,0.45);
+      transition: all 0.22s; display: none;
+    }
+    .narr-btn.show { display: inline-block; }
+    .narr-btn:hover { border-color: rgba(255,255,255,0.25); color: rgba(255,255,255,0.82); }
+    .narr-btn.primary { color: #030305; background: rgba(255,255,255,0.85); border-color: transparent; }
+    .narr-btn.primary:hover { background: #fff; }
+    .narr-btn.gold { color: var(--accent); border-color: rgba(192,144,96,0.25); }
+    .narr-btn.gold:hover { background: var(--accent-bg); }
+
+    /* Tab panels */
+    .tab-panel { display: none; flex-direction: column; flex: 1; overflow: hidden; }
+    .tab-panel.active { display: flex; }
+  </style>
+</head>
+<body>
+<div class="player-shell">
+
+  <!-- ══════════════════════════ VIDEO AREA ══════════════════════════ -->
+  <div class="video-area">
+    <div class="video-canvas" id="videoCanvas" onclick="handleCanvasClick()">
+
+      <!-- Simulated film -->
+      <div class="video-bg" id="videoBg"></div>
+      <div class="video-grain"></div>
+      <div class="video-vignette"></div>
+
+      <!-- Ambient edge light (overlaid on everything, under UI) -->
+      <div class="edge-light" id="edgeLight"></div>
+
+      <!-- Film title overlay -->
+      <div class="video-label" id="videoLabel">
+        <div class="video-trigger" id="labelTrigger"></div>
+        <div class="video-cat" id="labelCat"></div>
+      </div>
+
+      <!-- ══════ FLOATING BRODONAM BUTTON ══════ -->
+      <button class="brod-float" id="brodFloat" onclick="openBrodCompanion(event)">
+        <span class="brod-icon">◎</span>
+        <span class="brod-tooltip" id="brodTooltip">Brodonam has something to share</span>
+      </button>
+
+    </div><!-- /video-canvas -->
+
+    <!-- Controls -->
+    <div class="player-controls" id="playerControls">
+      <div class="progress-wrap" onclick="seekTo(event)">
+        <div class="progress-track">
+          <div class="progress-fill" id="progressFill"></div>
+          <div class="insight-markers" id="insightMarkers"></div>
+        </div>
+      </div>
+      <div class="ctrl-row">
+        <button class="ctrl-btn" id="playBtn" onclick="togglePlay()">⏸ Pause</button>
+        <span class="ctrl-time" id="timeDisplay">00:00 / 2:08:00</span>
+        <div class="ctrl-spacer"></div>
+        <button class="ctrl-toggle" onclick="toggleSidebar()">◎ Companion</button>
+        <a href="reflection.html" style="margin-left:12px">
+          <button class="ctrl-btn" style="color:rgba(255,255,255,0.28)">End & Reflect</button>
+        </a>
+      </div>
+    </div>
+
+    <!-- ══════ NARRATION OVERLAY ══════ -->
+    <div class="narration-overlay" id="narrationOverlay">
+      <div class="narration-dim"></div>
+      <div class="narration-breath"></div>
+      <div class="narration-panel">
+        <div class="narration-eyebrow" id="narrEyebrow">Brodonam · Scene Insight</div>
+        <p class="narration-text" id="narrText"></p>
+        <p class="narration-somatic" id="narrSomatic"></p>
+        <div class="narration-actions">
+          <button class="narr-btn primary show" onclick="closeNarration()">Continue watching</button>
+          <button class="narr-btn gold show" onclick="openReframePanel()">Take me deeper</button>
+          <button class="narr-btn show" onclick="openBrodCompanion(null, true)">Chat about this</button>
+          <button class="narr-btn show" onclick="saveCurrentInsight()">Save insight</button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /video-area -->
+
+  <!-- ══════════════════════════ SIDEBAR ══════════════════════════ -->
+  <div class="sidebar" id="sidebar">
+    <div class="sb-header">
+      <div class="sb-title">◎ Brodonam Companion</div>
+      <div class="sb-sub">Walking with you through this film</div>
+      <div class="framework-badge" id="frameworkBadge">
+        <span class="framework-dot"></span>
+        <span id="frameworkLabel">Psychodynamic lens</span>
+      </div>
+    </div>
+
+    <div class="sb-tabs">
+      <button class="sb-tab active" onclick="switchTab('chat',this)">Chat</button>
+      <button class="sb-tab" onclick="switchTab('insights',this)">Insights</button>
+      <button class="sb-tab" onclick="switchTab('scenes',this)">Ahead</button>
+    </div>
+
+    <!-- CHAT Tab -->
+    <div class="tab-panel active" id="tabChat">
+      <div class="sb-msgs" id="sbMsgs"></div>
+      <div class="sb-input-area">
+        <div class="sb-hint">Ask about this scene or how you're feeling</div>
+        <div class="sb-input-row">
+          <textarea class="sb-input" id="sbInput" placeholder="What are you noticing…" rows="1"
+            onkeydown="sbKey(event)" oninput="autosize(this)"></textarea>
+          <button class="sb-mic" id="sbSpeakBtn" onclick="toggleAutoSpeak()" title="Speak Brodonam's replies aloud" aria-label="Toggle voice output">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M11 5L6 9H2v6h4l5 4V5z"/>
+              <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
+              <path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
+            </svg>
+          </button>
+          <button class="sb-mic" id="sbMicBtn" onclick="toggleSbVoice()" title="Speak" aria-label="Voice input">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <rect x="9" y="2" width="6" height="13" rx="3"/>
+              <path d="M5 10a7 7 0 0 0 14 0"/>
+              <line x1="12" y1="19" x2="12" y2="22"/>
+              <line x1="8" y1="22" x2="16" y2="22"/>
+            </svg>
+          </button>
+          <button class="sb-send" onclick="sendSbMsg()">Send ↑</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- INSIGHTS Tab -->
+    <div class="tab-panel" id="tabInsights">
+      <div class="sb-msgs" id="sbInsightsList">
+        <div style="font-size:8px;letter-spacing:0.16em;text-transform:uppercase;color:var(--accent);opacity:0.6;padding:4px 0 10px">Saved insights</div>
+      </div>
+    </div>
+
+    <!-- AHEAD Tab -->
+    <div class="tab-panel" id="tabScenes">
+      <div class="sb-msgs" id="sbScenesList"></div>
+    </div>
+  </div>
+</div><!-- /player-shell -->
+
+<script src="data/movies.js"></script>
+<script>
+/* ═══════════════════════════════
+   MOVIE LOAD
+═══════════════════════════════ */
+const params   = new URLSearchParams(location.search);
+const movieId  = params.get('id') || 'eternal-sunshine';
+const MOVIE    = BRODONAM_MOVIES.find(m => m.id === movieId) || BRODONAM_MOVIES[0];
+
+// Set labels
+document.getElementById('labelTrigger').textContent = `"${MOVIE.trigger}"`;
+document.getElementById('labelCat').textContent = MOVIE.categories.join(' · ');
+document.title = `Brodonam — ${MOVIE.trigger}`;
+
+/* ═══════════════════════════════
+   CONTENT-WARNING GATE
+   Shows before anything else if the film has content flags.
+   Acknowledgement persists per-film for 7 days.
+═══════════════════════════════ */
+(function showContentGate() {
+  const flags = (MOVIE.contentFlags || [])
+    .map(k => ({ key: k, ...((typeof FLAG_LABELS !== 'undefined' && FLAG_LABELS[k]) || { label: k, severity: 'low' }) }))
+    .filter(f => f.label);
+  if (!flags.length) return;
+
+  const ackKey = `brodonam_ack_${MOVIE.id}`;
+  const lastAck = parseInt(localStorage.getItem(ackKey) || '0', 10);
+  if (lastAck && Date.now() - lastAck < 7 * 86400 * 1000) return;
+
+  const overlay = document.createElement('div');
+  overlay.id = 'contentGate';
+  overlay.innerHTML = `
+    <div class="cg-card" role="dialog" aria-labelledby="cgTitle" aria-describedby="cgBody">
+      <div class="cg-eyebrow">◆ Before we begin</div>
+      <div class="cg-title" id="cgTitle">"${MOVIE.trigger}"</div>
+      <div class="cg-body" id="cgBody">These themes appear in this film. If any feel unsafe to sit with right now, choose something different — there's no wrong answer.</div>
+      <ul class="cg-list">
+        ${flags.map(f => `<li class="cg-flag cg-${f.severity}">${f.label}</li>`).join('')}
+      </ul>
+      <div class="cg-actions">
+        <button class="cg-secondary" id="cgBack">Choose differently</button>
+        <button class="cg-primary"   id="cgReady">I'm ready</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+
+  // Pause any auto-progression while gated
+  window.__brodonamGated = true;
+  if (typeof isPlaying !== 'undefined') isPlaying = false;
+
+  document.getElementById('cgBack').onclick = () => {
+    window.location.href = 'index.html';
+  };
+  document.getElementById('cgReady').onclick = () => {
+    localStorage.setItem(ackKey, String(Date.now()));
+    overlay.classList.add('cg-out');
+    setTimeout(() => {
+      overlay.remove();
+      window.__brodonamGated = false;
+      if (typeof isPlaying !== 'undefined') isPlaying = true;
+    }, 400);
+  };
+})();
+
+/* ═══════════════════════════════
+   PLAYBACK STATE
+═══════════════════════════════ */
+let isPlaying         = true;
+let progress          = 0;         // 0–100%
+let sidebarOpen       = true;
+let ctrlsTimeout;
+let narrationActive   = false;
+let insightTriggered  = {};        // pct → boolean
+
+const TOTAL_SECS = MOVIE.duration.split(' ').reduce((acc, t, i, a) => {
+  const n = parseInt(t);
+  if (a[i+1] === 'hr')  return acc + n * 3600;
+  if (a[i+1] === 'min') return acc + n * 60;
+  return acc;
+}, 0) || 7680;
+
+/* ═══════════════════════════════
+   BUILD INSIGHT MARKERS ON PROGRESS BAR
+═══════════════════════════════ */
+const markersEl = document.getElementById('insightMarkers');
+(MOVIE.insights || []).forEach((ins, i) => {
+  const dot = document.createElement('div');
+  dot.className = 'insight-dot';
+  dot.id = `idot-${i}`;
+  dot.style.left = ins.pct + '%';
+  dot.title = `Brodonam Insight ${i+1}`;
+  dot.onclick = (e) => { e.stopPropagation(); triggerInsight(ins, i); };
+  markersEl.appendChild(dot);
+});
+
+/* Build "Ahead" tab */
+const scenesListEl = document.getElementById('sbScenesList');
+if (MOVIE.insights?.length) {
+  scenesListEl.innerHTML = '<div style="font-size:8px;letter-spacing:0.16em;text-transform:uppercase;color:var(--accent);opacity:0.6;padding:4px 0 12px">Key moments in this film</div>';
+  MOVIE.insights.forEach((ins, i) => {
+    const pct = ins.pct;
+    const t = Math.floor(pct / 100 * TOTAL_SECS);
+    const m = Math.floor(t / 60), s = t % 60;
+    const el = document.createElement('div');
+    el.style.cssText = 'border:1px solid rgba(255,255,255,0.06);padding:12px 14px;margin-bottom:6px;cursor:pointer;transition:border-color 0.2s;';
+    el.innerHTML = `
+      <div style="font-size:8px;letter-spacing:0.14em;text-transform:uppercase;color:var(--accent);opacity:0.55;margin-bottom:5px">
+        ◆ Insight ${i+1} · ${m}:${String(s).padStart(2,'0')} · ${FRAMEWORKS[ins.framework]?.name||ins.framework}
+      </div>
+      <div style="font-size:11px;color:rgba(255,255,255,0.40);line-height:1.5;">${ins.question}</div>`;
+    el.onclick = () => triggerInsight(ins, i);
+    el.onmouseenter = () => el.style.borderColor = 'rgba(255,255,255,0.14)';
+    el.onmouseleave = () => el.style.borderColor = 'rgba(255,255,255,0.06)';
+    scenesListEl.appendChild(el);
+  });
+}
+
+/* ═══════════════════════════════
+   PLAYBACK SIMULATION
+═══════════════════════════════ */
+const tick = setInterval(() => {
+  if (!isPlaying || narrationActive) return;
+  progress += 0.022;
+  if (progress >= 100) {
+    clearInterval(tick);
+    /* Save viewing session to localStorage */
+    try {
+      const saved = JSON.parse(localStorage.getItem('brodonam_sessions') || '[]');
+      saved.unshift({
+        movieId:    MOVIE.id,
+        trigger:    MOVIE.trigger,
+        categories: MOVIE.categories,
+        date:       new Date().toISOString(),
+        insights:   Object.keys(insightTriggered).length
+      });
+      localStorage.setItem('brodonam_sessions', JSON.stringify(saved.slice(0, 20)));
+      localStorage.setItem('brodonam_last_movie', JSON.stringify({ id: MOVIE.id, trigger: MOVIE.trigger, categories: MOVIE.categories }));
+    } catch(e) {}
+    setTimeout(() => location.href='reflection.html', 1500);
+  }
+  document.getElementById('progressFill').style.width = progress + '%';
+  updateTime();
+  checkApproachingInsight();
+  checkInsightTrigger();
+}, 400);
+
+function updateTime() {
+  const cur = Math.floor(progress / 100 * TOTAL_SECS);
+  const tot = TOTAL_SECS;
+  const fmt = s => `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;
+  document.getElementById('timeDisplay').textContent = `${fmt(cur)} / ${fmt(tot)}`;
+}
+
+/* ═══════════════════════════════
+   SCENE INTELLIGENCE — Approach & Trigger
+═══════════════════════════════ */
+const APPROACH_WINDOW = 2.0;   // % before scene → start edge glow
+const TRIGGER_WINDOW  = 0.12;  // % tolerance to fire
+
+function checkApproachingInsight() {
+  const approaching = (MOVIE.insights||[]).some(ins =>
+    !insightTriggered[ins.pct] &&
+    progress >= ins.pct - APPROACH_WINDOW &&
+    progress < ins.pct
+  );
+  const el = document.getElementById('edgeLight');
+  const bf = document.getElementById('brodFloat');
+  if (approaching) {
+    el.className  = 'edge-light approaching';
+    bf.className  = 'brod-float approaching';
+    document.getElementById('brodTooltip').textContent = 'Something important is coming…';
+  } else if (!narrationActive) {
+    el.className = 'edge-light';
+    bf.className = 'brod-float';
+    document.getElementById('brodTooltip').textContent = 'Chat with Brodonam';
+  }
+}
+
+function checkInsightTrigger() {
+  (MOVIE.insights||[]).forEach((ins, i) => {
+    if (!insightTriggered[ins.pct] &&
+        progress >= ins.pct &&
+        progress < ins.pct + TRIGGER_WINDOW) {
+      insightTriggered[ins.pct] = true;
+      setTimeout(() => triggerInsight(ins, i), 600);
+    }
+  });
+}
+
+/* ═══════════════════════════════
+   INSIGHT TRIGGER — Full Sequence
+═══════════════════════════════ */
+function triggerInsight(ins, idx) {
+  narrationActive = true;
+  isPlaying = false;
+  document.getElementById('videoBg').classList.add('paused', 'dimmed');
+  document.getElementById('playBtn').textContent = '▶ Play';
+
+  /* Mark dot as triggered */
+  const dot = document.getElementById(`idot-${idx}`);
+  if (dot) dot.classList.add('triggered');
+
+  /* Activate edge light — maximum */
+  const el = document.getElementById('edgeLight');
+  el.className = 'edge-light insight-active';
+  el.style.setProperty('--accent', ins.accentColor || '#C09060');
+
+  /* Activate float button */
+  document.getElementById('brodFloat').className = 'brod-float insight-state';
+  document.getElementById('brodTooltip').textContent = 'Brodonam is speaking';
+
+  /* Show framework badge in sidebar */
+  const fw = FRAMEWORKS[ins.framework];
+  if (fw) {
+    document.getElementById('frameworkLabel').textContent = `${fw.name} · ${fw.desc}`;
+    document.getElementById('frameworkBadge').classList.add('show');
+  }
+
+  /* Build narration eyebrow */
+  const t = Math.floor(ins.pct / 100 * TOTAL_SECS);
+  const m = Math.floor(t/60), s = t%60;
+  document.getElementById('narrEyebrow').textContent =
+    `Brodonam Insight · ${m}:${String(s).padStart(2,'0')} · ${fw?.name||ins.framework}`;
+
+  /* Show overlay */
+  const overlay = document.getElementById('narrationOverlay');
+  overlay.classList.add('visible');
+  document.getElementById('playerControls').classList.add('hidden');
+
+  /* Typewrite narration, then show somatic after */
+  typeWriter(ins.narration, document.getElementById('narrText'), () => {
+    setTimeout(() => {
+      const somatic = document.getElementById('narrSomatic');
+      somatic.textContent = ins.somatic;
+      somatic.classList.add('show');
+    }, 1200);
+  });
+
+  /* Speak narration (TTS) */
+  speak(ins.narration);
+
+  /* Auto-add to chat sidebar & seed AI context */
+  setTimeout(() => {
+    const insightHtml = `<div class="sm-framework">${fw?.name||ins.framework} lens</div>${ins.narration.substring(0,140)}…<div class="sm-reframe">${ins.reframe}</div><div class="sm-question">${ins.question}</div>`;
+    addSbMsg('ai', insightHtml);
+    addInsightToList(ins, idx);
+    /* Tell the AI what just happened so it can continue the thread */
+    sbHistory.push({ role: 'assistant', content: `${ins.narration} — ${ins.reframe} ${ins.question}` });
+    currentInsightContext = ins.narration;
+  }, 800);
+}
+
+function closeNarration() {
+  narrationActive = false;
+  isPlaying = true;
+  document.getElementById('narrationOverlay').classList.remove('visible');
+  document.getElementById('narrText').innerHTML = '';
+  document.getElementById('narrSomatic').classList.remove('show');
+  document.getElementById('videoBg').classList.remove('paused', 'dimmed');
+  document.getElementById('playBtn').textContent = '⏸ Pause';
+  document.getElementById('edgeLight').className = 'edge-light';
+  document.getElementById('brodFloat').className = 'brod-float';
+  document.getElementById('playerControls').classList.remove('hidden');
+  speechSynthesis.cancel();
+}
+
+function openReframePanel() {
+  /* Switch to "deeper" psychological content — add reframe to chat */
+  const ins = MOVIE.insights?.find(i => insightTriggered[i.pct]);
+  if (!ins) return;
+  const fw = FRAMEWORKS[ins.framework];
+  addSbMsg('ai', `<div class="sm-framework">Going deeper — ${fw?.name||''}</div>${ins.reframe}<div class="sm-reframe">"${ins.action}"</div>`);
+  if (!sidebarOpen) toggleSidebar();
+  closeNarration();
+}
+
+function openBrodCompanion(e, fromNarration = false) {
+  if (e) e.stopPropagation();
+  if (!sidebarOpen) toggleSidebar();
+  if (fromNarration) closeNarration();
+  document.getElementById('sbInput').focus();
+}
+
+function saveCurrentInsight() {
+  const btn = event.currentTarget;
+  btn.textContent = '✓ Saved';
+  btn.style.color = 'rgba(255,255,255,0.35)';
+  btn.disabled = true;
+}
+
+/* ═══════════════════════════════
+   TYPEWRITER
+═══════════════════════════════ */
+function typeWriter(text, el, onDone) {
+  el.innerHTML = '<span class="narration-cursor"></span>';
+  const cursor = el.querySelector('.narration-cursor');
+  let i = 0;
+  const iv = setInterval(() => {
+    if (i < text.length) {
+      el.insertBefore(document.createTextNode(text[i]), cursor);
+      i++;
+    } else {
+      clearInterval(iv);
+      onDone?.();
+    }
+  }, 22);
+}
+
+/* ═══════════════════════════════
+   VOICE ENGINE
+═══════════════════════════════ */
+/* ─── Speech-to-text ───
+   Primary: MediaRecorder → /api/voice/transcribe (Whisper, works in any browser).
+   Fallback: webkitSpeechRecognition for browsers where MediaRecorder fails
+   or when the backend has no OPENAI_API_KEY (request returns 503). */
+
+let sbListening = false;
+let mediaRecorder = null;
+let mediaStream = null;
+let recordedChunks = [];
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+let webkitRecognition = null;
+
+if (SpeechRecognition) {
+  webkitRecognition = new SpeechRecognition();
+  webkitRecognition.continuous = false;
+  webkitRecognition.interimResults = true;
+  webkitRecognition.lang = 'en-US';
+  webkitRecognition.onresult = (e) => {
+    const t = Array.from(e.results).map(r => r[0].transcript).join('');
+    document.getElementById('sbInput').value = t;
+    if (e.results[0].isFinal) { stopWebkit(); sendSbMsg(); }
+  };
+  webkitRecognition.onend = stopWebkit;
+  webkitRecognition.onerror = stopWebkit;
+}
+
+async function toggleSbVoice() {
+  if (sbListening) return stopSbListening();
+  // Prefer MediaRecorder if available
+  if (window.MediaRecorder && navigator.mediaDevices?.getUserMedia) {
+    await startRecording();
+  } else if (webkitRecognition) {
+    startWebkit();
+  } else {
+    addSbMsg('ai', 'Voice input isn\'t available in this browser. Type instead?');
+  }
+}
+
+async function startRecording() {
+  try {
+    mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    mediaRecorder = new MediaRecorder(mediaStream, { mimeType: 'audio/webm' });
+    recordedChunks = [];
+    mediaRecorder.ondataavailable = (e) => { if (e.data?.size) recordedChunks.push(e.data); };
+    mediaRecorder.onstop = onRecordingStopped;
+    mediaRecorder.start();
+    sbListening = true;
+    document.getElementById('sbMicBtn').classList.add('recording');
+  } catch (e) {
+    console.warn('Mic permission denied or unavailable:', e.message);
+    addSbMsg('ai', "I can't access your microphone. Check your browser's permissions, or type instead.");
+  }
+}
+
+function stopSbListening() {
+  if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+    mediaRecorder.stop();
+    mediaStream?.getTracks().forEach(t => t.stop());
+  } else {
+    stopWebkit();
+  }
+  sbListening = false;
+  document.getElementById('sbMicBtn').classList.remove('recording');
+}
+
+async function onRecordingStopped() {
+  const blob = new Blob(recordedChunks, { type: 'audio/webm' });
+  recordedChunks = [];
+  if (blob.size < 800) return; // too short to be meaningful
+
+  const inputEl = document.getElementById('sbInput');
+  const prev = inputEl.placeholder;
+  inputEl.placeholder = 'Transcribing…';
+
+  try {
+    const res = await fetch('/api/voice/transcribe', {
+      method: 'POST',
+      headers: { 'Content-Type': 'audio/webm' },
+      body: blob,
+    });
+    if (res.status === 503 && webkitRecognition) {
+      // Backend not configured — fall back to in-browser recognition next time
+      addSbMsg('ai', 'Voice transcription isn\'t enabled on the server. Type for now.');
+      inputEl.placeholder = prev;
+      return;
+    }
+    const data = await res.json();
+    inputEl.placeholder = prev;
+    if (data.text?.trim()) {
+      inputEl.value = data.text.trim();
+      sendSbMsg();
+    }
+  } catch (e) {
+    inputEl.placeholder = prev;
+    console.warn('Transcribe failed:', e);
+  }
+}
+
+function startWebkit() {
+  if (!webkitRecognition) return;
+  sbListening = true;
+  webkitRecognition.start();
+  document.getElementById('sbMicBtn').classList.add('recording');
+}
+function stopWebkit() {
+  sbListening = false;
+  webkitRecognition?.stop();
+  document.getElementById('sbMicBtn').classList.remove('recording');
+}
+
+/* ─── Text-to-speech ───
+   Primary: ElevenLabs via /api/voice/speak (warm, consistent).
+   Fallback: browser SpeechSynthesis. Auto-speak is opt-in. */
+
+const SPEAK_KEY = 'brodonam_autospeak';
+let autoSpeak = localStorage.getItem(SPEAK_KEY) === '1';
+let currentAudio = null;
+let elevenLabsAvailable = null; // null=unknown, true/false after first probe
+
+function toggleAutoSpeak() {
+  autoSpeak = !autoSpeak;
+  localStorage.setItem(SPEAK_KEY, autoSpeak ? '1' : '0');
+  document.getElementById('sbSpeakBtn').classList.toggle('on', autoSpeak);
+  if (!autoSpeak && currentAudio) { currentAudio.pause(); currentAudio = null; }
+}
+function initAutoSpeakUI() {
+  const btn = document.getElementById('sbSpeakBtn');
+  if (btn) btn.classList.toggle('on', autoSpeak);
+}
+
+async function speak(text, cb) {
+  if (!text?.trim()) { cb?.(); return; }
+  if (!autoSpeak) { cb?.(); return; }
+
+  // Cancel any in-flight playback
+  if (currentAudio) { try { currentAudio.pause(); } catch {} currentAudio = null; }
+
+  // Try ElevenLabs first; fall back to browser TTS if not configured
+  if (elevenLabsAvailable !== false) {
+    try {
+      const res = await fetch('/api/voice/speak', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text }),
+      });
+      if (res.status === 503) {
+        elevenLabsAvailable = false;
+      } else if (res.ok) {
+        elevenLabsAvailable = true;
+        const buf = await res.arrayBuffer();
+        const url = URL.createObjectURL(new Blob([buf], { type: 'audio/mpeg' }));
+        const audio = new Audio(url);
+        currentAudio = audio;
+        audio.onended = () => { URL.revokeObjectURL(url); currentAudio = null; cb?.(); };
+        await audio.play();
+        return;
+      }
+    } catch (e) {
+      console.warn('ElevenLabs failed, falling back:', e.message);
+    }
+  }
+
+  // Browser-native fallback
+  if (window.speechSynthesis) {
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.rate = 0.85; u.pitch = 0.93; u.volume = 0.88;
+    const voices = speechSynthesis.getVoices();
+    const warm = voices.find(v => ['Samantha','Karen','Aria','Serena'].some(n => v.name.includes(n)) && v.lang.startsWith('en'));
+    u.voice = warm || voices.find(v => v.lang.startsWith('en')) || null;
+    u.onend = cb;
+    speechSynthesis.speak(u);
+  } else {
+    cb?.();
+  }
+}
+window.speechSynthesis && (speechSynthesis.onvoiceschanged = () => speechSynthesis.getVoices());
+
+// Initialise the auto-speak toggle once DOM is ready
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initAutoSpeakUI);
+} else {
+  initAutoSpeakUI();
+}
+
+/* ═══════════════════════════════
+   SIDEBAR CHAT — Real AI companion
+═══════════════════════════════ */
+const sbHistory = [];
+let currentInsightContext = null;  // tracks narration text of last insight shown
+let conversationId = sessionStorage.getItem('brodonam_conversation_id') || null;
+
+function addSbMsg(from, html) {
+  const msgs = document.getElementById('sbMsgs');
+  const d = document.createElement('div');
+  d.className = `sm ${from}`;
+  d.innerHTML = `<div class="sm-bubble">${html}</div>`;
+  msgs.appendChild(d);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+/* Typing indicator */
+function showSbTyping() {
+  const msgs = document.getElementById('sbMsgs');
+  const d = document.createElement('div');
+  d.className = 'sm ai'; d.id = 'sbTyping';
+  d.innerHTML = `<div class="sm-bubble" style="padding:10px 14px">
+    <span class="td"></span><span class="td"></span><span class="td"></span>
+  </div>`;
+  msgs.appendChild(d); msgs.scrollTop = msgs.scrollHeight;
+}
+function hideSbTyping() {
+  document.getElementById('sbTyping')?.remove();
+}
+
+async function sendSbMsg() {
+  const input = document.getElementById('sbInput');
+  const txt = input.value.trim(); if (!txt) return;
+  addSbMsg('user', txt);
+  input.value = ''; input.style.height = 'auto';
+
+  /* Build messages array for API */
+  sbHistory.push({ role: 'user', content: txt });
+
+  showSbTyping();
+
+  /* Open a live AI bubble we can stream tokens into */
+  const msgsEl = document.getElementById('sbMsgs');
+  hideSbTyping();
+  const wrap = document.createElement('div');
+  wrap.className = 'sm ai';
+  const bubble = document.createElement('div');
+  bubble.className = 'sm-bubble';
+  bubble.textContent = '';
+  wrap.appendChild(bubble);
+  msgsEl.appendChild(wrap);
+
+  let reply = '';
+  let crisisResource = null;
+
+  try {
+    const profile = JSON.parse(localStorage.getItem('brodonam_profile') || '{}');
+    const res = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        filmId:             MOVIE.id,
+        messages:           sbHistory,
+        userProfile:        profile,
+        context:            'player',
+        insightInProgress:  currentInsightContext,
+        conversationId:     conversationId,
+      }),
+    });
+
+    const ct = res.headers.get('content-type') || '';
+    if (!res.ok && !ct.includes('text/event-stream')) {
+      const err = await res.json().catch(() => ({}));
+      bubble.textContent = err.error || 'Something interrupted us. Take your time — I\'m still here.';
+      return;
+    }
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buf = '';
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      buf += decoder.decode(value, { stream: true });
+      let idx;
+      while ((idx = buf.indexOf('\n\n')) !== -1) {
+        const raw = buf.slice(0, idx); buf = buf.slice(idx + 2);
+        if (!raw.trim()) continue;
+        let evType = 'message', evData = '';
+        for (const line of raw.split('\n')) {
+          if (line.startsWith('event: ')) evType = line.slice(7).trim();
+          else if (line.startsWith('data: ')) evData += line.slice(6);
+        }
+        if (evType === 'token') {
+          try {
+            const tok = JSON.parse(evData);
+            reply += tok;
+            bubble.textContent = reply;
+            msgsEl.scrollTop = msgsEl.scrollHeight;
+          } catch {}
+        } else if (evType === 'crisis') {
+          try { crisisResource = JSON.parse(evData).resource; } catch {}
+          wrap.classList.add('crisis');
+        } else if (evType === 'done') {
+          try {
+            const d = JSON.parse(evData);
+            if (d.conversationId) {
+              conversationId = d.conversationId;
+              sessionStorage.setItem('brodonam_conversation_id', conversationId);
+            }
+          } catch {}
+        } else if (evType === 'error') {
+          try {
+            const e = JSON.parse(evData);
+            if (!reply) bubble.textContent = e.error || 'Something interrupted us.';
+          } catch {}
+        }
+      }
+    }
+
+    if (!reply.trim()) bubble.textContent = 'I\'m here with you.';
+    sbHistory.push({ role: 'assistant', content: reply || bubble.textContent });
+
+    if (crisisResource && crisisResource.label) {
+      const chip = document.createElement('div');
+      chip.className = 'crisis-chip';
+      chip.textContent = `◆ ${crisisResource.label}`;
+      bubble.appendChild(chip);
+    }
+    currentInsightContext = null;
+
+    // Auto-speak when enabled
+    if (autoSpeak && (reply || bubble.textContent)) {
+      speak(reply || bubble.textContent);
+    }
+  } catch (e) {
+    if (!reply) bubble.textContent = 'Something interrupted us. Take your time — I\'m still here.';
+    console.error('Companion API error:', e);
+  }
+}
+function sbKey(e) { if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendSbMsg();} }
+function autosize(el) { el.style.height='auto'; el.style.height=Math.min(el.scrollHeight,72)+'px'; }
+
+function addInsightToList(ins, idx) {
+  const list = document.getElementById('sbInsightsList');
+  const el = document.createElement('div');
+  el.style.cssText='border:1px solid rgba(255,255,255,0.06);padding:12px 14px;margin-bottom:6px;';
+  el.innerHTML = `
+    <div style="font-size:8px;letter-spacing:0.14em;text-transform:uppercase;color:var(--psych);opacity:0.55;margin-bottom:6px">
+      Insight ${idx+1} · ${FRAMEWORKS[ins.framework]?.name||ins.framework}
+    </div>
+    <div style="font-size:11.5px;color:rgba(255,255,255,0.58);line-height:1.5;">"${ins.narration.substring(0,120)}…"</div>`;
+  list.appendChild(el);
+}
+
+/* ═══════════════════════════════
+   CONTROLS
+═══════════════════════════════ */
+function togglePlay() {
+  if (narrationActive) return;
+  isPlaying = !isPlaying;
+  document.getElementById('videoBg').classList.toggle('paused', !isPlaying);
+  document.getElementById('playBtn').textContent = isPlaying ? '⏸ Pause' : '▶ Play';
+  if (isPlaying) speechSynthesis.cancel();
+  showControls();
+}
+
+function handleCanvasClick() {
+  if (!narrationActive) { togglePlay(); showControls(); }
+}
+
+function seekTo(e) {
+  const rect = e.currentTarget.getBoundingClientRect();
+  progress = Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100));
+  updateTime();
+}
+
+function toggleSidebar() {
+  sidebarOpen = !sidebarOpen;
+  document.getElementById('sidebar').classList.toggle('collapsed', !sidebarOpen);
+}
+
+/* Auto-hide controls */
+document.querySelector('.video-area').addEventListener('mousemove', showControls);
+function showControls() {
+  const c = document.getElementById('playerControls');
+  if (!narrationActive) c.classList.remove('hidden');
+  clearTimeout(ctrlsTimeout);
+  ctrlsTimeout = setTimeout(() => { if(isPlaying&&!narrationActive) c.classList.add('hidden'); }, 3200);
+}
+
+function switchTab(name, el) {
+  document.querySelectorAll('.sb-tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  const map = {chat:'tabChat', insights:'tabInsights', scenes:'tabScenes'};
+  document.getElementById(map[name]).classList.add('active');
+}
+
+/* ═══════════════════════════════
+   INIT SIDEBAR MESSAGE
+═══════════════════════════════ */
+setTimeout(() => {
+  const openingText = `I'm here with you. We're watching "${MOVIE.trigger}" together. When you feel something — anything at all — tell me. Or just let the film work. I'll speak up when something important is approaching.`;
+  addSbMsg('ai', `I'm here with you. We're watching <em>"${MOVIE.trigger}"</em> together. When you feel something — anything at all — tell me. Or just let the film work.<br><br>I'll speak up when something important is approaching.`);
+  /* Seed AI history so it knows the session opening */
+  sbHistory.push({ role: 'assistant', content: openingText });
+}, 900);
+</script>
+</body>
+</html>

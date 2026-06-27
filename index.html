@@ -1,0 +1,1092 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Brodonam</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:     #060609;
+      --border: rgba(255,255,255,0.07);
+      --text:   rgba(255,255,255,0.82);
+      --dim:    rgba(255,255,255,0.46);
+      --mute:   rgba(255,255,255,0.22);
+      --accent: #C09060;
+      --psych:  #8A78A8;
+      --grid:   rgba(255,255,255,0.038);
+      --sans:   'Inter', -apple-system, sans-serif;
+    }
+
+    html, body {
+      height: 100%; overflow: hidden;
+      background: var(--bg); color: var(--text);
+      font-family: var(--sans); font-weight: 300;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── Grid ── */
+    .grid-bg {
+      position: fixed; inset: 0; z-index: 1; pointer-events: none;
+      background-image:
+        linear-gradient(var(--grid) 1px, transparent 1px),
+        linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+      background-size: 40px 40px;
+    }
+
+    /* ── Movie Wall ── */
+    .movie-wall {
+      position: fixed; inset: 0; z-index: 0;
+      display: grid; grid-template-columns: repeat(4, 1fr);
+      gap: 6px; padding: 6px; overflow: hidden;
+    }
+    .movie-col { display: flex; flex-direction: column; gap: 6px; will-change: transform; }
+    .movie-col.c1 { animation: drift 90s linear infinite; }
+    .movie-col.c2 { animation: drift 75s linear infinite; animation-delay: -28s; }
+    .movie-col.c3 { animation: drift 105s linear infinite; animation-delay: -14s; }
+    .movie-col.c4 { animation: drift 82s linear infinite; animation-delay: -50s; }
+    @keyframes drift { from { transform: translateY(0); } to { transform: translateY(-50%); } }
+
+    .movie-card { width: 100%; padding-bottom: 150%; position: relative; overflow: hidden; flex-shrink: 0; }
+    .card-gradient { position: absolute; inset: 0; }
+    .card-poster {
+      position: absolute; inset: 0;
+      background-size: cover; background-position: center top;
+      filter: brightness(0.55) saturate(0.65);
+    }
+    .card-grain {
+      position: absolute; inset: 0; opacity: 0.05; pointer-events: none;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+      background-size: 180px 180px;
+    }
+    .card-overlay {
+      position: absolute; inset: 0;
+      background: linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.32) 45%, rgba(0,0,0,0.06) 70%);
+    }
+    .card-tag {
+      position: absolute; top: 9px; left: 9px;
+      font-size: 6.5px; letter-spacing: 0.18em; text-transform: uppercase;
+      color: var(--psych); opacity: 0.50;
+    }
+    .card-trigger {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      padding: 8px 9px 11px;
+      font-size: 8.5px; color: rgba(255,255,255,0.36); line-height: 1.48;
+    }
+
+    /* ── Vignette ── */
+    .wall-vignette {
+      position: fixed; inset: 0; z-index: 2; pointer-events: none;
+      background:
+        radial-gradient(ellipse 60% 52% at 50% 50%, transparent 0%, rgba(6,6,9,0.80) 100%),
+        linear-gradient(to bottom, rgba(6,6,9,0.92) 0%, transparent 18%, transparent 82%, rgba(6,6,9,0.92) 100%),
+        linear-gradient(to right,  rgba(6,6,9,0.84) 0%, transparent 14%, transparent 86%, rgba(6,6,9,0.84) 100%);
+    }
+
+    /* ── Center layout ── */
+    .center {
+      position: fixed; inset: 0; z-index: 10;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 12px; padding: 20px;
+    }
+
+    /* ── Typewriter text above box ── */
+    .above-text {
+      height: 16px;
+      font-size: 9.5px; letter-spacing: 0.28em; text-transform: uppercase;
+      color: rgba(255,255,255,0.22); text-align: center;
+      display: flex; align-items: center; gap: 0;
+    }
+    .type-cursor {
+      display: inline-block; width: 1.5px; height: 10px;
+      background: rgba(255,255,255,0.28); margin-left: 1px;
+      animation: blink 0.9s step-end infinite;
+    }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+    /* ── Chat Portal ── */
+    .chat-portal {
+      width: min(368px, calc(100vw - 32px));
+      background: rgba(6,6,10,0.28);
+      backdrop-filter: blur(40px) saturate(0%) brightness(1.13);
+      -webkit-backdrop-filter: blur(40px) saturate(0%) brightness(1.13);
+      border: 1px solid rgba(255,255,255,0.058);
+      box-shadow:
+        0 8px 56px rgba(0,0,0,0.52),
+        0 2px 14px rgba(0,0,0,0.32),
+        inset 0 1px 0 rgba(255,255,255,0.042),
+        inset 0 -1px 0 rgba(0,0,0,0.16);
+      display: flex; flex-direction: column;
+      opacity: 0; animation: fadeUp 0.9s ease forwards 0.5s;
+    }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Portal header */
+    .portal-header {
+      padding: 13px 18px 11px;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+      display: flex; align-items: center; justify-content: space-between;
+      flex-shrink: 0;
+    }
+    .portal-logo {
+      font-size: 9px; font-weight: 400; letter-spacing: 0.34em;
+      text-transform: uppercase; color: rgba(255,255,255,0.22);
+    }
+    .portal-status { display: flex; align-items: center; gap: 7px; }
+    .status-dot {
+      width: 5px; height: 5px; border-radius: 50%;
+      background: var(--psych); opacity: 0; transition: opacity 0.3s;
+    }
+    .status-dot.on { opacity: 1; animation: sdot 1.3s ease-in-out infinite; }
+    @keyframes sdot { 0%,100%{transform:scale(1);opacity:0.65} 50%{transform:scale(1.55);opacity:1} }
+    .status-label {
+      font-size: 7.5px; letter-spacing: 0.16em; text-transform: uppercase;
+      color: rgba(255,255,255,0.18); transition: color 0.3s;
+    }
+    .status-label.on { color: rgba(138,120,168,0.55); }
+
+    /* Accessibility — respect reduced-motion preference */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+      }
+      .movie-wall { animation: none !important; transform: none !important; }
+    }
+    /* Focus rings — visible for keyboard nav, hidden for mouse */
+    :focus-visible {
+      outline: 2px solid rgba(192,144,96,0.55);
+      outline-offset: 2px;
+    }
+
+    /* Auth chip (top-right of portal header) */
+    .auth-chip {
+      margin-left: auto; padding: 5px 10px;
+      font-family: var(--sans); font-size: 8px; letter-spacing: 0.18em;
+      text-transform: uppercase; color: rgba(255,255,255,0.42);
+      background: transparent; border: 1px solid rgba(255,255,255,0.10);
+      cursor: pointer; transition: color 0.2s, border-color 0.2s;
+    }
+    .auth-chip:hover { color: rgba(255,255,255,0.72); border-color: rgba(255,255,255,0.24); }
+    .auth-chip.signed-in {
+      color: rgba(138,120,168,0.62);
+      border-color: rgba(138,120,168,0.22);
+    }
+    .auth-chip.signed-in::before { content: '◆ '; opacity: 0.7; }
+
+    /* Auth modal */
+    .auth-overlay {
+      position: fixed; inset: 0; z-index: 9000;
+      background: rgba(3,3,5,0.85); backdrop-filter: blur(10px);
+      display: flex; align-items: center; justify-content: center;
+      padding: 24px;
+      animation: authIn 0.3s ease-out;
+    }
+    .auth-overlay[hidden] { display: none; }
+    @keyframes authIn { from { opacity: 0; } to { opacity: 1; } }
+    .auth-card {
+      max-width: 380px; width: 100%;
+      background: rgba(12,10,16,0.94);
+      border: 1px solid rgba(255,255,255,0.10);
+      padding: 28px 26px;
+    }
+    .auth-eyebrow {
+      font-size: 8px; letter-spacing: 0.22em; text-transform: uppercase;
+      color: rgba(192,144,96,0.70); margin-bottom: 14px;
+    }
+    .auth-title {
+      font-size: 16px; font-weight: 300; color: rgba(255,255,255,0.88);
+      margin-bottom: 10px; line-height: 1.4;
+    }
+    .auth-body {
+      font-size: 12px; color: rgba(255,255,255,0.50); line-height: 1.6;
+      margin-bottom: 18px;
+    }
+    .auth-input {
+      width: 100%; padding: 11px 12px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.10);
+      color: rgba(255,255,255,0.88); font-family: var(--sans); font-size: 13px;
+      margin-bottom: 14px; outline: none;
+      transition: border-color 0.18s;
+    }
+    .auth-input:focus { border-color: rgba(138,120,168,0.42); }
+    .auth-actions { display: flex; gap: 8px; }
+    .auth-secondary, .auth-primary {
+      flex: 1; padding: 10px 12px;
+      font-family: var(--sans); font-size: 9px; letter-spacing: 0.18em;
+      text-transform: uppercase; cursor: pointer;
+      transition: background 0.18s, border-color 0.18s;
+    }
+    .auth-secondary {
+      background: transparent; border: 1px solid rgba(255,255,255,0.12);
+      color: rgba(255,255,255,0.58);
+    }
+    .auth-secondary:hover { border-color: rgba(255,255,255,0.28); }
+    .auth-primary {
+      background: rgba(138,120,168,0.18);
+      border: 1px solid rgba(138,120,168,0.42);
+      color: rgba(255,255,255,0.92);
+    }
+    .auth-primary:hover { background: rgba(138,120,168,0.30); }
+    .auth-primary:disabled { opacity: 0.45; cursor: default; }
+    .auth-message {
+      margin-top: 14px; font-size: 11px; line-height: 1.5;
+      color: rgba(255,255,255,0.48);
+    }
+    .auth-message.success { color: rgba(138,120,168,0.84); }
+    .auth-message.error   { color: rgba(232,140,140,0.84); }
+
+    /* Messages */
+    .chat-messages {
+      flex: 1; overflow-y: auto; padding: 13px 18px;
+      display: flex; flex-direction: column; gap: 8px;
+      min-height: 90px; max-height: 230px;
+      scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.04) transparent;
+    }
+    .chat-messages::-webkit-scrollbar { width: 2px; }
+    .chat-messages::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.05); }
+
+    .msg { max-width: 93%; opacity: 0; animation: msgIn 0.28s ease forwards; }
+    @keyframes msgIn { from{opacity:0;transform:translateY(5px)} to{opacity:1;transform:none} }
+    .msg.ai  { align-self: flex-start; }
+    .msg.usr { align-self: flex-end; }
+
+    .msg-bubble { padding: 8px 12px; font-size: 12px; line-height: 1.62; }
+    .msg.ai  .msg-bubble {
+      background: rgba(255,255,255,0.024); border: 1px solid rgba(255,255,255,0.055);
+      color: rgba(255,255,255,0.56);
+    }
+    .msg.usr .msg-bubble {
+      background: rgba(192,144,96,0.08); border: 1px solid rgba(192,144,96,0.14);
+      color: rgba(255,255,255,0.66); text-align: right;
+    }
+
+    /* Crisis-routed AI message — distinct, calm, never alarming */
+    .msg.ai.crisis .msg-bubble {
+      background: rgba(232,180,140,0.06);
+      border: 1px solid rgba(232,180,140,0.22);
+      color: rgba(255,236,216,0.78);
+    }
+    .crisis-chip {
+      margin-top: 8px; padding: 7px 10px;
+      font-size: 11px; line-height: 1.45;
+      color: rgba(255,236,216,0.86);
+      background: rgba(232,180,140,0.10);
+      border: 1px solid rgba(232,180,140,0.28);
+      border-radius: 4px;
+      letter-spacing: 0.02em;
+    }
+
+    /* Typing indicator */
+    .typing-dots {
+      display: flex; gap: 4px; padding: 9px 13px;
+      background: rgba(255,255,255,0.024); border: 1px solid rgba(255,255,255,0.055);
+      width: fit-content; align-self: flex-start;
+    }
+    .td {
+      width: 4px; height: 4px; border-radius: 50%;
+      background: rgba(255,255,255,0.22);
+      animation: tdot 1.4s ease-in-out infinite;
+    }
+    .td:nth-child(2){animation-delay:.18s} .td:nth-child(3){animation-delay:.36s}
+    @keyframes tdot { 0%,60%,100%{transform:translateY(0);opacity:.22} 30%{transform:translateY(-4px);opacity:.76} }
+
+    /* Choice buttons */
+    .choice-area {
+      display: none; gap: 5px; flex-wrap: wrap;
+      padding: 8px 18px 7px;
+      border-top: 1px solid rgba(255,255,255,0.04);
+      flex-shrink: 0;
+    }
+    .choice-area.show { display: flex; }
+    .choice-btn {
+      font-family: var(--sans); font-size: 8px; letter-spacing: 0.14em;
+      text-transform: uppercase; color: rgba(255,255,255,0.34);
+      border: 1px solid rgba(255,255,255,0.08); background: none;
+      padding: 6px 13px; cursor: pointer; transition: all 0.18s;
+    }
+    .choice-btn:hover { color: rgba(255,255,255,0.72); border-color: rgba(255,255,255,0.20); }
+    .choice-btn.on { color: var(--accent); border-color: rgba(192,144,96,0.30); background: rgba(192,144,96,0.06); }
+
+    /* Text input */
+    .input-area {
+      display: none; padding: 9px 18px 14px;
+      border-top: 1px solid rgba(255,255,255,0.04);
+      flex-shrink: 0;
+    }
+    .input-area.show { display: block; }
+    .input-row { display: flex; align-items: flex-end; gap: 8px; }
+    .chat-input {
+      flex: 1; font-family: var(--sans); font-size: 12px; font-weight: 300;
+      color: rgba(255,255,255,0.58); background: transparent;
+      border: none; border-bottom: 1px solid rgba(255,255,255,0.09);
+      padding: 4px 0 7px; outline: none; resize: none; line-height: 1.5;
+      min-height: 28px; max-height: 80px;
+    }
+    .chat-input::placeholder { color: rgba(255,255,255,0.20); }
+    .chat-input:focus { color: rgba(255,255,255,0.76); border-bottom-color: rgba(255,255,255,0.22); }
+
+    /* Mic */
+    .mic-btn {
+      width: 28px; height: 28px; background: none; border: none;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      color: rgba(255,255,255,0.22); transition: color 0.2s; padding: 0; position: relative;
+      flex-shrink: 0;
+    }
+    .mic-btn:hover { color: rgba(255,255,255,0.55); }
+    .mic-btn.recording { color: var(--accent); }
+    .mic-btn.recording::after {
+      content: ''; position: absolute; inset: -4px;
+      border: 1px solid rgba(192,144,96,0.40); border-radius: 50%;
+      animation: micRing 1s ease-in-out infinite;
+    }
+    @keyframes micRing { 0%,100%{transform:scale(1);opacity:.8} 50%{transform:scale(1.30);opacity:0} }
+
+    /* Send */
+    .send-btn {
+      font-family: var(--sans); font-size: 8.5px; letter-spacing: 0.18em;
+      text-transform: uppercase; color: rgba(255,255,255,0.26);
+      background: none; border: none; cursor: pointer;
+      padding: 5px 0; transition: color 0.2s; white-space: nowrap; flex-shrink: 0;
+    }
+    .send-btn:hover { color: var(--accent); }
+
+    /* Voice hint */
+    .voice-hint {
+      font-size: 7.5px; letter-spacing: 0.12em; text-transform: uppercase;
+      color: rgba(255,255,255,0.16); margin-top: 5px; text-align: right;
+      display: none;
+    }
+    .voice-hint.show { display: block; }
+
+    /* ── Recommendation card (rendered inside messages) ── */
+    .reco-wrap { max-width: 100%; width: 100%; }
+    .reco-card {
+      display: block; text-decoration: none;
+      border: 1px solid rgba(192,144,96,0.18);
+      background: rgba(192,144,96,0.04);
+      transition: border-color 0.22s;
+    }
+    .reco-card:hover { border-color: rgba(192,144,96,0.36); }
+    .reco-film {
+      display: flex; gap: 11px; padding: 12px 13px;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+    }
+    .reco-swatch { width: 44px; height: 66px; flex-shrink: 0; }
+    .reco-body { flex: 1; min-width: 0; }
+    .reco-label {
+      font-size: 6.5px; letter-spacing: 0.22em; text-transform: uppercase;
+      color: var(--accent); opacity: 0.65; margin-bottom: 7px;
+    }
+    .reco-trigger {
+      font-size: 11.5px; font-weight: 300;
+      color: rgba(255,255,255,0.72); line-height: 1.44; margin-bottom: 4px;
+    }
+    .reco-cat {
+      font-size: 7px; letter-spacing: 0.14em; text-transform: uppercase;
+      color: var(--psych); opacity: 0.55;
+    }
+    .reco-advice { padding: 10px 13px; display: flex; flex-direction: column; gap: 8px; }
+    .reco-row { display: flex; gap: 9px; align-items: flex-start; }
+    .reco-icon { font-size: 11px; flex-shrink: 0; opacity: 0.52; margin-top: 1px; }
+    .reco-text { font-size: 10.5px; font-weight: 300; color: rgba(255,255,255,0.42); line-height: 1.56; }
+    .reco-cta {
+      display: block; width: 100%; padding: 11px;
+      font-family: var(--sans); font-size: 8px; letter-spacing: 0.22em;
+      text-transform: uppercase; color: rgba(255,255,255,0.88);
+      background: rgba(192,144,96,0.14); border: none; cursor: pointer;
+      text-align: center; text-decoration: none; transition: background 0.2s;
+    }
+    .reco-cta:hover { background: rgba(192,144,96,0.26); }
+
+    /* Content flag chips on reco card */
+    .reco-flags {
+      padding: 10px 14px 12px;
+      border-top: 1px solid rgba(255,255,255,0.04);
+      display: flex; flex-wrap: wrap; gap: 5px; align-items: center;
+    }
+    .reco-flags-label {
+      font-size: 8px; letter-spacing: 0.18em; text-transform: uppercase;
+      color: rgba(255,255,255,0.32); margin-right: 4px;
+    }
+    .reco-flag {
+      font-size: 10px; padding: 3px 7px;
+      border-left: 2px solid;
+      background: rgba(255,255,255,0.02);
+    }
+    .reco-flag-high { color: rgba(232,140,140,0.92); border-left-color: rgba(232,140,140,0.65); background: rgba(232,140,140,0.05); }
+    .reco-flag-med  { color: rgba(232,180,140,0.88); border-left-color: rgba(232,180,140,0.55); background: rgba(232,180,140,0.05); }
+
+    .reco-watch-where {
+      text-align: center; margin-top: 8px;
+    }
+    .reco-watch-where a {
+      font-size: 9px; letter-spacing: 0.16em; text-transform: uppercase;
+      color: rgba(255,255,255,0.32); text-decoration: none;
+      transition: color 0.2s;
+    }
+    .reco-watch-where a:hover { color: rgba(255,255,255,0.62); }
+
+    /* ── Skip ── */
+    .skip-wrap { text-align: center; }
+    .skip-link {
+      font-size: 7px; letter-spacing: 0.18em; text-transform: uppercase;
+      color: rgba(255,255,255,0.16); text-decoration: none; transition: color 0.2s;
+    }
+    .skip-link:hover { color: rgba(255,255,255,0.46); }
+
+    /* ── Footer ── */
+    .page-footer {
+      position: fixed; bottom: 0; left: 0; right: 0; z-index: 5;
+      pointer-events: none; display: flex; justify-content: space-between;
+      padding: 14px 22px; padding-bottom: max(14px, env(safe-area-inset-bottom, 14px));
+    }
+    .foot-text { font-size: 7.5px; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(255,255,255,0.10); }
+  </style>
+</head>
+<body>
+  <div class="grid-bg"></div>
+  <div class="movie-wall" id="movieWall"></div>
+  <div class="wall-vignette"></div>
+
+  <!-- Auth modal — hidden by default -->
+  <div class="auth-overlay" id="authOverlay" hidden>
+    <div class="auth-card" role="dialog" aria-labelledby="authTitle">
+      <div class="auth-eyebrow">◆ Sign in</div>
+      <div class="auth-title" id="authTitle">Remember our conversations.</div>
+      <div class="auth-body">We'll send you a sign-in link. No password, no spam. You can delete everything any time.</div>
+      <form id="authForm" onsubmit="submitAuth(event)">
+        <input type="email" id="authEmail" class="auth-input" placeholder="you@example.com" required autocomplete="email">
+        <div class="auth-actions">
+          <button type="button" class="auth-secondary" onclick="closeAuth()">Not now</button>
+          <button type="submit" class="auth-primary" id="authSubmit">Send link</button>
+        </div>
+      </form>
+      <div class="auth-message" id="authMessage"></div>
+    </div>
+  </div>
+
+  <div class="center">
+
+    <!-- Typewriter line above portal -->
+    <div class="above-text">
+      <span id="typeTarget"></span><span class="type-cursor"></span>
+    </div>
+
+    <!-- Chat portal -->
+    <div class="chat-portal">
+
+      <div class="portal-header">
+        <span class="portal-logo">Brodonam</span>
+        <div class="portal-status">
+          <div class="status-dot" id="statusDot"></div>
+          <span class="status-label" id="statusLabel">Listening</span>
+        </div>
+        <button class="auth-chip" id="authChip" onclick="openAuth()">Sign in</button>
+      </div>
+
+      <div class="chat-messages" id="chatMessages"></div>
+
+      <div class="choice-area" id="choiceArea"></div>
+
+      <div class="input-area" id="inputArea">
+        <div class="input-row">
+          <textarea class="chat-input" id="chatInput"
+            placeholder="Say whatever comes…" rows="1"
+            onkeydown="handleKey(event)" oninput="autosize(this)"></textarea>
+          <button class="mic-btn" id="micBtn" onclick="toggleVoice()" title="Hold to speak">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <rect x="9" y="2" width="6" height="13" rx="3"/>
+              <path d="M5 10a7 7 0 0 0 14 0"/>
+              <line x1="12" y1="19" x2="12" y2="22"/>
+              <line x1="8" y1="22" x2="16" y2="22"/>
+            </svg>
+          </button>
+          <button class="send-btn" onclick="sendMessage()">Send →</button>
+        </div>
+        <div class="voice-hint" id="voiceHint">Listening — speak naturally</div>
+      </div>
+
+    </div>
+
+    <div class="skip-wrap">
+      <a class="skip-link" href="home.html">Browse without check-in →</a>
+    </div>
+
+  </div>
+
+  <div class="page-footer">
+    <span class="foot-text">Your healing begins here</span>
+    <span class="foot-text">Est. 2025</span>
+  </div>
+
+  <script src="data/movies.js"></script>
+  <script>
+  /* ══════════════════════════
+     MOVIE WALL
+  ══════════════════════════ */
+  const COLS = [[],[],[],[]];
+  BRODONAM_MOVIES.forEach((m,i) => COLS[i%4].push(m));
+  const wall = document.getElementById('movieWall');
+  COLS.forEach((col, ci) => {
+    const el = document.createElement('div');
+    el.className = `movie-col c${ci+1}`;
+    [...col,...col,...col].forEach(m => {
+      const c = document.createElement('div');
+      c.className = 'movie-card';
+      c.innerHTML = `
+        <div class="card-gradient" style="background:${m.gradient}"></div>
+        ${m.poster ? `<div class="card-poster" style="background-image:url('${m.poster}')"></div>` : ''}
+        <div class="card-grain"></div>
+        <div class="card-overlay"></div>
+        <div class="card-tag">${m.categories[0]}</div>
+        <div class="card-trigger">${m.trigger}</div>`;
+      el.appendChild(c);
+    });
+    wall.appendChild(el);
+  });
+
+  /* ══════════════════════════
+     TYPEWRITER ABOVE BOX
+  ══════════════════════════ */
+  const PHRASES = [
+    "Cinema for the things you can't yet say.",
+    "Find the film that holds what you're feeling.",
+    "Matched to your emotional state.",
+    "Therapeutic cinema, guided by AI.",
+  ];
+  let phraseIdx = 0, charIdx = 0, erasing = false;
+  const typeEl = document.getElementById('typeTarget');
+
+  function typeStep() {
+    const phrase = PHRASES[phraseIdx];
+    if (!erasing) {
+      typeEl.textContent = phrase.slice(0, charIdx + 1);
+      charIdx++;
+      if (charIdx === phrase.length) {
+        erasing = true;
+        setTimeout(typeStep, 2400);
+      } else {
+        setTimeout(typeStep, 42);
+      }
+    } else {
+      typeEl.textContent = phrase.slice(0, charIdx - 1);
+      charIdx--;
+      if (charIdx === 0) {
+        erasing = false;
+        phraseIdx = (phraseIdx + 1) % PHRASES.length;
+        setTimeout(typeStep, 400);
+      } else {
+        setTimeout(typeStep, 22);
+      }
+    }
+  }
+  setTimeout(typeStep, 1200);
+
+  /* ══════════════════════════
+     VOICE ENGINE
+  ══════════════════════════ */
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  let recognition, isListening = false;
+
+  if (SR) {
+    recognition = new SR();
+    recognition.continuous = false;
+    recognition.interimResults = true;
+    recognition.lang = 'en-US';
+    recognition.onresult = e => {
+      const t = Array.from(e.results).map(r => r[0].transcript).join('');
+      document.getElementById('chatInput').value = t;
+      if (e.results[0].isFinal) { stopVoice(); sendMessage(); }
+    };
+    recognition.onend  = () => stopVoice();
+    recognition.onerror = () => stopVoice();
+  }
+
+  function toggleVoice() {
+    if (!recognition) { addMsg('ai','Voice isn\'t available in this browser. Chrome works best.'); return; }
+    isListening ? stopVoice() : startVoice();
+  }
+  function startVoice() {
+    isListening = true;
+    recognition.start();
+    document.getElementById('micBtn').classList.add('recording');
+    document.getElementById('voiceHint').classList.add('show');
+    document.getElementById('statusDot').classList.add('on');
+    document.getElementById('statusLabel').classList.add('on');
+    document.getElementById('statusLabel').textContent = 'Listening';
+  }
+  function stopVoice() {
+    isListening = false;
+    recognition?.stop();
+    document.getElementById('micBtn').classList.remove('recording');
+    document.getElementById('voiceHint').classList.remove('show');
+    document.getElementById('statusDot').classList.remove('on');
+    document.getElementById('statusLabel').classList.remove('on');
+    document.getElementById('statusLabel').textContent = 'Listening';
+  }
+
+  /* TTS */
+  function speak(text) {
+    if (!window.speechSynthesis) return;
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.rate = 0.88; u.pitch = 0.95; u.volume = 0.85;
+    const voices = speechSynthesis.getVoices();
+    const warm = voices.find(v => ['Samantha','Karen','Aria','Serena'].some(n => v.name.includes(n)) && v.lang.startsWith('en'));
+    u.voice = warm || voices.find(v => v.lang.startsWith('en-')) || null;
+    speechSynthesis.speak(u);
+  }
+  if (window.speechSynthesis) speechSynthesis.onvoiceschanged = () => speechSynthesis.getVoices();
+
+  /* ══════════════════════════
+     CHAT ENGINE
+  ══════════════════════════ */
+  const msgsEl   = document.getElementById('chatMessages');
+  const choiceEl = document.getElementById('choiceArea');
+  const inputEl  = document.getElementById('inputArea');
+  const inputTxt = document.getElementById('chatInput');
+
+  let state = 0;
+  let profile = { emotion: null, mode: null, duration: null, support: null };
+
+  /* Add message */
+  function addMsg(from, html, delay=0, tts=false) {
+    return new Promise(r => setTimeout(() => {
+      const d = document.createElement('div');
+      d.className = `msg ${from}`;
+      d.innerHTML = `<div class="msg-bubble">${html}</div>`;
+      msgsEl.appendChild(d);
+      msgsEl.scrollTop = msgsEl.scrollHeight;
+      if (from==='ai' && tts) speak(html.replace(/<[^>]*>/g,''));
+      r();
+    }, delay));
+  }
+
+  /* Typing indicator */
+  function showTyping(ms=1300) {
+    return new Promise(r => {
+      const d = document.createElement('div');
+      d.id = 'typing'; d.className = 'typing-dots';
+      d.innerHTML = '<div class="td"></div><div class="td"></div><div class="td"></div>';
+      msgsEl.appendChild(d); msgsEl.scrollTop = msgsEl.scrollHeight;
+      setTimeout(() => { d.remove(); r(); }, ms);
+    });
+  }
+
+  /* Show buttons */
+  function showChoices(items, onPick) {
+    choiceEl.innerHTML = '';
+    items.forEach(it => {
+      const b = document.createElement('button');
+      b.className = 'choice-btn'; b.textContent = it.label;
+      b.onclick = () => {
+        choiceEl.querySelectorAll('.choice-btn').forEach(x => x.classList.remove('on'));
+        b.classList.add('on');
+        choiceEl.classList.remove('show');
+        onPick(it.value, it.label);
+      };
+      choiceEl.appendChild(b);
+    });
+    choiceEl.classList.add('show');
+  }
+  function hideChoices() { choiceEl.classList.remove('show'); choiceEl.innerHTML=''; }
+  function showInput()   { inputEl.classList.add('show'); inputTxt.focus(); }
+  function hideInput()   { inputEl.classList.remove('show'); }
+
+  /* ─── Watch & support advice ─── */
+  const ADVICE = {
+    grief:        { mode:'alone',              modeText:'Watch alone first — grief needs space without an audience.',            icon:'🧠', suppText:'If what surfaces feels heavy, bring this to a therapist. Grief this deep is worth professional companionship.' },
+    anxiety:      { mode:'alone',              modeText:'Watch alone — your mind processes this better without performance.',      icon:'👥', suppText:'A close friend who knows your anxiety could watch it with you afterward. Someone who won\'t try to fix you.' },
+    relationship: { mode:'with your partner', modeText:'Watch together. Let the film say what\'s been difficult to say directly.', icon:'💑', suppText:'If communication is stuck, bring this to a couples session as a starting point.' },
+    identity:     { mode:'alone',              modeText:'Identity questions are best held privately first. Solo watch.',           icon:'🧠', suppText:'A therapist or trusted mentor can help you unpack what surfaces — this runs deep.' },
+    family:       { mode:'with family',        modeText:'Some families can watch this together — it builds a shared language.',    icon:'👨‍👩‍👧', suppText:'If dynamics are volatile, watch alone first. Bring it to a family therapist if possible.' },
+    'self-worth': { mode:'alone',              modeText:'This one is deeply personal. Be alone with it the first time.',          icon:'🧠', suppText:'Share what comes up with someone who reflects your worth back — therapist, mentor, or close friend.' },
+    loneliness:   { mode:'alone',              modeText:'Loneliness is understood most deeply in solitude. Watch alone.',         icon:'👥', suppText:'After watching, reach out to one person. This film gives you language to begin.' },
+    resilience:   { mode:'alone',              modeText:'This is a gift to yourself. Watch it when you need reminding.',          icon:'👥', suppText:'You can also share it with a friend who\'s been through something hard. A shared act of recognition.' },
+    attachment:   { mode:'alone',              modeText:'Watch alone first — it maps patterns that are personal to you.',         icon:'🧠', suppText:'Bring what surfaces to your therapist, especially if fear of closeness is something you\'re working on.' },
+    healing:      { mode:'alone',              modeText:'Healing is your journey. Start alone.',                                  icon:'🧠', suppText:'If you\'re in therapy, this film is excellent material to bring to a session — it opens doors.' },
+    disconnection:{ mode:'alone',              modeText:'Being unseen is one of the loneliest places. Watch this in the quiet.',  icon:'👥', suppText:'Afterward, share it with one person you trust. The film gives you the first sentence.' },
+    numbness:     { mode:'alone',              modeText:'Numbness lifts slowly. Give this your full attention.',                  icon:'🧠', suppText:'A therapist can help you understand what\'s underneath — this film is a good starting point.' },
+  };
+
+  const CAT_MAP = {
+    grief:'grief', anxiety:'anxiety', relationship:'relationship',
+    disconnection:'loneliness', identity:'identity', family:'family',
+    'self-worth':'self-worth', numbness:'healing',
+    loneliness:'loneliness', resilience:'resilience',
+    attachment:'attachment', healing:'healing'
+  };
+
+  const CC = {
+    grief:'Grief & Loss', relationship:'Love & Relationships', anxiety:'Anxiety & Mind',
+    identity:'Identity & Becoming', family:'Family Wounds', 'self-worth':'Self-Worth',
+    loneliness:'Loneliness', resilience:'Resilience', attachment:'Attachment & Trust',
+    healing:'Healing & Peace',
+  };
+
+  /* ─── Conversation history (for AI API) ─── */
+  const chatHistory = [];
+  let recommendedFilmId = null;
+  let conversationId = sessionStorage.getItem('brodonam_conversation_id') || null;
+  let currentUser = null;
+
+  /* ─── Auth state on load + modal wiring ─── */
+  (async function initAuth() {
+    try {
+      const r = await fetch('/me');
+      const data = await r.json();
+      currentUser = data.user;
+      updateAuthChip();
+    } catch {}
+  })();
+
+  function updateAuthChip() {
+    const chip = document.getElementById('authChip');
+    if (!chip) return;
+    if (currentUser) {
+      chip.textContent = currentUser.email.split('@')[0];
+      chip.classList.add('signed-in');
+      chip.onclick = () => {
+        if (confirm('Sign out of Brodonam?')) signOut();
+      };
+    } else {
+      chip.textContent = 'Sign in';
+      chip.classList.remove('signed-in');
+      chip.onclick = openAuth;
+    }
+  }
+  function openAuth() {
+    document.getElementById('authOverlay').hidden = false;
+    document.getElementById('authMessage').textContent = '';
+    document.getElementById('authMessage').className = 'auth-message';
+    setTimeout(() => document.getElementById('authEmail').focus(), 50);
+  }
+  function closeAuth() {
+    document.getElementById('authOverlay').hidden = true;
+  }
+  async function submitAuth(e) {
+    e.preventDefault();
+    const email = document.getElementById('authEmail').value.trim();
+    const submit = document.getElementById('authSubmit');
+    const msg = document.getElementById('authMessage');
+    submit.disabled = true; submit.textContent = 'Sending…';
+    try {
+      const r = await fetch('/auth/request', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      const data = await r.json();
+      if (r.ok) {
+        msg.textContent = `Check ${email} for a sign-in link. (It expires in 15 minutes.)`;
+        msg.className = 'auth-message success';
+        document.getElementById('authForm').style.display = 'none';
+      } else {
+        msg.textContent = data.error || 'Something went wrong.';
+        msg.className = 'auth-message error';
+        submit.disabled = false; submit.textContent = 'Send link';
+      }
+    } catch {
+      msg.textContent = 'Network error. Try again.';
+      msg.className = 'auth-message error';
+      submit.disabled = false; submit.textContent = 'Send link';
+    }
+  }
+  async function signOut() {
+    await fetch('/logout', { method: 'POST' });
+    currentUser = null;
+    conversationId = null;
+    sessionStorage.removeItem('brodonam_conversation_id');
+    updateAuthChip();
+  }
+  window.openAuth = openAuth;
+  window.closeAuth = closeAuth;
+  window.submitAuth = submitAuth;
+
+  /* ─── Stream the AI backend (SSE).
+        Renders tokens into a live bubble as they arrive; returns full reply. ─── */
+  async function streamAI(userText) {
+    chatHistory.push({ role: 'user', content: userText });
+
+    // Remove any active typing indicator and open an empty bubble we can append into
+    document.getElementById('typing')?.remove();
+    const bubble = document.createElement('div');
+    bubble.className = 'msg ai';
+    const inner = document.createElement('div');
+    inner.className = 'msg-bubble';
+    inner.textContent = '';
+    bubble.appendChild(inner);
+    msgsEl.appendChild(bubble);
+
+    let reply = '';
+    let crisisResource = null;
+
+    try {
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          filmId:         recommendedFilmId,
+          messages:       chatHistory,
+          userProfile:    profile,
+          context:        'landing',
+          conversationId: conversationId,
+        }),
+      });
+
+      // Non-streamed error envelopes still come back as JSON
+      const ct = res.headers.get('content-type') || '';
+      if (!res.ok && !ct.includes('text/event-stream')) {
+        const err = await res.json().catch(() => ({}));
+        inner.textContent = err.error || 'Something interrupted us. Take your time — I\'m still here.';
+        return inner.textContent;
+      }
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buf = '';
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buf += decoder.decode(value, { stream: true });
+        let idx;
+        while ((idx = buf.indexOf('\n\n')) !== -1) {
+          const raw = buf.slice(0, idx); buf = buf.slice(idx + 2);
+          if (!raw.trim()) continue;
+          let evType = 'message', evData = '';
+          for (const line of raw.split('\n')) {
+            if (line.startsWith('event: ')) evType = line.slice(7).trim();
+            else if (line.startsWith('data: ')) evData += line.slice(6);
+          }
+          if (evType === 'token') {
+            try {
+              const tok = JSON.parse(evData);
+              reply += tok;
+              inner.textContent = reply;
+              msgsEl.scrollTop = msgsEl.scrollHeight;
+            } catch {}
+          } else if (evType === 'crisis') {
+            try { crisisResource = JSON.parse(evData).resource; } catch {}
+            bubble.classList.add('crisis');
+          } else if (evType === 'done') {
+            try {
+              const d = JSON.parse(evData);
+              if (d.conversationId) {
+                conversationId = d.conversationId;
+                sessionStorage.setItem('brodonam_conversation_id', conversationId);
+              }
+            } catch {}
+          } else if (evType === 'error') {
+            try {
+              const e = JSON.parse(evData);
+              if (!reply) inner.textContent = e.error || 'Something interrupted us.';
+            } catch {}
+          }
+        }
+      }
+
+      if (!reply.trim()) inner.textContent = 'I\'m here with you.';
+      chatHistory.push({ role: 'assistant', content: reply || inner.textContent });
+
+      // Crisis: append a resource chip beneath the bubble
+      if (crisisResource && crisisResource.label) {
+        const chip = document.createElement('div');
+        chip.className = 'crisis-chip';
+        chip.innerHTML = `◆ ${crisisResource.label}`;
+        bubble.appendChild(chip);
+      }
+
+      // Voice on full reply (matches old addMsg behaviour)
+      try { speak(reply.replace(/<[^>]*>/g, '')); } catch {}
+      msgsEl.scrollTop = msgsEl.scrollHeight;
+      return reply;
+
+    } catch (e) {
+      console.error('Stream error:', e);
+      inner.textContent = 'Take your time. I\'m here when you\'re ready.';
+      return inner.textContent;
+    }
+  }
+
+  /* ─── Main respond function ─── */
+  async function aiRespond(userText) {
+    hideInput(); hideChoices();
+
+    if (state === 0) {
+      // Detect emotion
+      const t = userText.toLowerCase();
+      if      (/grief|loss|lost|died|miss|gone|mourn/.test(t))              profile.emotion = 'grief';
+      else if (/anxi|worry|fear|dread|panic|stress/.test(t))                profile.emotion = 'anxiety';
+      else if (/relation|partner|wife|husband|love|fight|marriage/.test(t)) profile.emotion = 'relationship';
+      else if (/alone|lonely|disconnect|unseen|invisible/.test(t))          profile.emotion = 'disconnection';
+      else if (/identity|purpose|who am i|lost myself|becoming/.test(t))   profile.emotion = 'identity';
+      else if (/family|parent|child|father|mother|sibling/.test(t))        profile.emotion = 'family';
+      else if (/worth|enough|fail|shame|inadequate/.test(t))               profile.emotion = 'self-worth';
+      else if (/numb|nothing|empty|hollow|flat/.test(t))                   profile.emotion = 'numbness';
+      else if (/attach|trust|intimacy|abandon|cling/.test(t))              profile.emotion = 'attachment';
+      else if (/heal|recover|peace|better|growing/.test(t))                profile.emotion = 'healing';
+      else if (/resil|survive|strong|keep going/.test(t))                  profile.emotion = 'resilience';
+      else                                                                   profile.emotion = 'grief';
+
+      await showTyping(1500);
+      await addMsg('ai','Who are you watching with tonight?', 0, true);
+      showChoices([
+        { label:'Just me',       value:'solo'    },
+        { label:'My partner',    value:'partner' },
+        { label:'My family',     value:'family'  },
+      ], async (val, lbl) => {
+        profile.mode = val;
+        await addMsg('usr', lbl);
+        await showTyping(1100);
+        await addMsg('ai','How long have you been carrying this?', 0, true);
+        showChoices([
+          { label:'Just recently',    value:'recent' },
+          { label:'A few weeks',      value:'weeks'  },
+          { label:'Several months',   value:'months' },
+          { label:'For years',        value:'years'  },
+        ], async (v2, l2) => {
+          profile.duration = v2;
+          await addMsg('usr', l2);
+          await showTyping(900);
+          await addMsg('ai','Anyone you\'d want beside you tonight — partner, friend, or therapist?', 0, true);
+          showChoices([
+            { label:'Just me for now',   value:'none'      },
+            { label:'My partner',        value:'partner'   },
+            { label:'A close friend',    value:'friend'    },
+            { label:'My therapist',      value:'therapist' },
+          ], async (v3, l3) => {
+            profile.support = v3;
+            await addMsg('usr', l3);
+            await buildReco();
+          });
+        });
+      });
+
+      state = 1;
+
+    } else if (state >= 2) {
+      // Post-recommendation: real AI conversation (streamed)
+      await showTyping(500);
+      await streamAI(userText);
+      showInput();
+    }
+  }
+
+  /* ─── Build recommendation ─── */
+  async function buildReco() {
+    await showTyping(2000);
+    await addMsg('ai','I\'ve found something for you.', 0, true);
+
+    const pcat = CAT_MAP[profile.emotion] || 'grief';
+    const modeKey = profile.mode || 'solo';
+
+    let pool = BRODONAM_MOVIES.filter(m =>
+      m.categories.includes(pcat) && m.watchModes.includes(modeKey)
+    );
+    if (!pool.length) pool = BRODONAM_MOVIES.filter(m => m.categories.includes(pcat));
+    if (!pool.length) pool = BRODONAM_MOVIES;
+    const film = pool[0];
+
+    const adv  = ADVICE[profile.emotion] || ADVICE.grief;
+    const catLabel = CC[film.categories[0]] || film.categories[0];
+
+    // Content flags — show small chips on the card so the user can decide before clicking through
+    const flagChips = (film.contentFlags || [])
+      .map(k => (typeof FLAG_LABELS !== 'undefined' && FLAG_LABELS[k]) || { label: k, severity: 'low' })
+      .filter(f => f.severity === 'high' || f.severity === 'med')
+      .slice(0, 4)
+      .map(f => `<span class="reco-flag reco-flag-${f.severity}">${f.label}</span>`)
+      .join('');
+
+    // Build card as a msg
+    const wrap = document.createElement('div');
+    wrap.className = 'msg ai reco-wrap';
+    wrap.innerHTML = `
+      <a class="reco-card" href="player.html?id=${film.id}">
+        <div class="reco-film">
+          <div class="reco-swatch" style="background:${film.gradient}"></div>
+          <div class="reco-body">
+            <div class="reco-label">◆ Brodonam recommends</div>
+            <div class="reco-trigger">${film.trigger}</div>
+            <div class="reco-cat">${catLabel} · ${film.duration}</div>
+          </div>
+        </div>
+        <div class="reco-advice">
+          <div class="reco-row">
+            <div class="reco-icon">🎬</div>
+            <div class="reco-text">Watch <strong style="color:rgba(255,255,255,0.60);font-weight:400">${adv.mode}</strong> — ${adv.modeText}</div>
+          </div>
+          <div class="reco-row">
+            <div class="reco-icon">${adv.icon}</div>
+            <div class="reco-text">${adv.suppText}</div>
+          </div>
+        </div>
+        ${flagChips ? `<div class="reco-flags"><span class="reco-flags-label">Contains:</span> ${flagChips}</div>` : ''}
+        <div class="reco-cta">Begin watching →</div>
+      </a>
+      <div class="reco-watch-where">
+        <a href="#" id="watchWhere-${film.id}" target="_blank" rel="noopener">Where can I watch this? →</a>
+      </div>`;
+
+    // Fetch watch link lazily so the SSR card is instant
+    fetch(`/api/film/${film.id}/watch-link`)
+      .then(r => r.json())
+      .then(d => {
+        const a = document.getElementById(`watchWhere-${film.id}`);
+        if (a && d.url) a.href = d.url;
+      })
+      .catch(() => {});
+    msgsEl.appendChild(wrap);
+    msgsEl.scrollTop = msgsEl.scrollHeight;
+
+    // Track which film was recommended so AI has context
+    recommendedFilmId = film.id;
+    // Seed chat history with the recommendation moment
+    chatHistory.push({ role: 'assistant', content: `I've found something for you — "${film.trigger}". This film works with ${film.categories.join(' and ')}.` });
+
+    await showTyping(500);
+    await streamAI('Tell me what to expect and how to watch it with intention.');
+
+    // Save profile
+    try {
+      localStorage.setItem('brodonam_profile', JSON.stringify({
+        emotion: profile.emotion, mode: profile.mode,
+        duration: profile.duration, support: profile.support, source: 'chat'
+      }));
+    } catch(e) {}
+
+    state = 2;
+    showInput();
+  }
+
+  /* ── Input handlers ── */
+  function sendMessage() {
+    const txt = inputTxt.value.trim(); if (!txt) return;
+    addMsg('usr', txt);
+    inputTxt.value = ''; inputTxt.style.height = 'auto';
+    aiRespond(txt);
+  }
+  function handleKey(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }
+  function autosize(el) { el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 80) + 'px'; }
+
+  /* ── Start ── */
+  setTimeout(async () => {
+    await addMsg('ai','What are you carrying tonight?', 0, true);
+    showInput();
+  }, 900);
+
+  </script>
+</body>
+</html>

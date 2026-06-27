@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Brodonam — Your Healing Journey</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #060609;
+      --border:    rgba(255,255,255,0.07);
+      --border-h:  rgba(255,255,255,0.18);
+      --text:      rgba(255,255,255,0.84);
+      --text-dim:  rgba(255,255,255,0.48);
+      --text-mute: rgba(255,255,255,0.26);
+      --accent:    #C09060;
+      --accent-bg: rgba(192,144,96,0.10);
+      --psych:     #8A78A8;
+      --psych-bg:  rgba(138,120,168,0.08);
+      --grid:      rgba(255,255,255,0.042);
+      --sans:      'Inter', -apple-system, sans-serif;
+      --serif:     var(--sans);
+    }
+
+    html { background: var(--bg); }
+    body {
+      min-height: 100vh; background: var(--bg);
+      color: var(--text); font-family: var(--sans);
+      font-weight: 300; -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    .grid-bg {
+      position: fixed; inset: 0; pointer-events: none; z-index: 0;
+      background-image:
+        linear-gradient(var(--grid) 1px, transparent 1px),
+        linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+      background-size: 40px 40px;
+    }
+
+    /* ─── Nav ─── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; height: 56px; z-index: 50;
+      background: rgba(6,6,9,0.96); border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; padding: 0 28px; gap: 20px;
+    }
+    .nav-logo { font-size: 10px; font-weight: 400; letter-spacing: 0.28em; text-transform: uppercase; color: rgba(255,255,255,0.24); text-decoration: none; }
+    .nav-links { display: flex; gap: 22px; margin-left: 24px; }
+    .nav-link { font-size: 9px; font-weight: 400; letter-spacing: 0.16em; text-transform: uppercase; color: rgba(255,255,255,0.3); text-decoration: none; transition: color 0.2s; }
+    .nav-link:hover, .nav-link.active { color: rgba(255,255,255,0.68); }
+    .nav-right { margin-left: auto; display: flex; gap: 20px; align-items: center; }
+    .nav-avatar { width: 28px; height: 28px; border: 1px solid var(--border-h); display: flex; align-items: center; justify-content: center; font-size: 10px; color: rgba(255,255,255,0.45); }
+
+    /* ─── Main ─── */
+    main {
+      position: relative; z-index: 1;
+      padding: 96px 28px 80px;
+      max-width: 800px; margin: 0 auto;
+    }
+
+    /* ─── Page header ─── */
+    .page-eyebrow {
+      font-size: 9px; font-weight: 400; letter-spacing: 0.2em;
+      text-transform: uppercase; color: var(--psych); opacity: 0.65;
+      margin-bottom: 10px;
+    }
+    .page-title {
+      font-size: clamp(20px, 3.5vw, 28px); font-weight: 300;
+      color: rgba(255,255,255,0.82); line-height: 1.35; margin-bottom: 10px;
+    }
+    .page-sub {
+      font-size: 13px; font-weight: 300;
+      color: rgba(255,255,255,0.42); line-height: 1.65; margin-bottom: 36px;
+    }
+
+    /* ─── Stats row ─── */
+    .stats-row {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;
+      margin-bottom: 44px;
+    }
+    .stat-block {
+      border: 1px solid var(--border); padding: 18px 18px 16px;
+    }
+    .stat-num {
+      font-size: clamp(24px, 4vw, 34px); font-weight: 300;
+      color: rgba(255,255,255,0.82); margin-bottom: 6px;
+    }
+    .stat-label {
+      font-size: 8px; font-weight: 400; letter-spacing: 0.16em;
+      text-transform: uppercase; color: rgba(255,255,255,0.3);
+    }
+
+    /* ─── Emotional arc ─── */
+    .arc-block {
+      border: 1px solid rgba(138,120,168,0.18); background: var(--psych-bg);
+      padding: 24px; margin-bottom: 40px;
+    }
+    .arc-label {
+      font-size: 9px; font-weight: 400; letter-spacing: 0.18em;
+      text-transform: uppercase; color: var(--psych); opacity: 0.65;
+      margin-bottom: 18px;
+    }
+    .arc-chart {
+      display: flex; align-items: flex-end; gap: 6px; height: 60px;
+      margin-bottom: 10px;
+    }
+    .arc-bar {
+      flex: 1; background: rgba(138,120,168,0.3); min-height: 6px;
+      border-top: 1px solid rgba(138,120,168,0.5);
+      transition: height 1s cubic-bezier(0.22,1,0.36,1);
+      position: relative;
+    }
+    .arc-bar.active { background: rgba(138,120,168,0.55); }
+    .arc-bar[title]:hover::after {
+      content: attr(title); position: absolute; bottom: 110%;
+      left: 50%; transform: translateX(-50%);
+      font-size: 9px; color: var(--text-dim); white-space: nowrap;
+      background: rgba(6,6,9,0.9); padding: 4px 8px;
+      border: 1px solid var(--border); pointer-events: none;
+    }
+    .arc-dates {
+      display: flex; justify-content: space-between;
+      font-size: 8px; font-weight: 400; letter-spacing: 0.12em;
+      color: rgba(255,255,255,0.22);
+    }
+    .arc-note {
+      font-size: 12px; font-weight: 300;
+      color: rgba(255,255,255,0.5); line-height: 1.6; margin-top: 18px;
+    }
+
+    /* ─── Tabs ─── */
+    .lib-tabs { display: flex; gap: 0; margin-bottom: 28px; border-bottom: 1px solid var(--border); }
+    .lib-tab {
+      font-family: var(--sans); font-size: 9px; font-weight: 400;
+      letter-spacing: 0.16em; text-transform: uppercase;
+      color: rgba(255,255,255,0.3); background: none; border: none;
+      padding: 12px 20px; cursor: pointer;
+      border-bottom: 1px solid transparent; margin-bottom: -1px;
+      transition: all 0.2s;
+    }
+    .lib-tab.active { color: rgba(255,255,255,0.75); border-bottom-color: var(--accent); }
+
+    /* ─── Tab panels ─── */
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* ─── Timeline ─── */
+    .timeline { display: flex; flex-direction: column; gap: 0; }
+    .timeline-item {
+      display: flex; gap: 0; position: relative; padding-bottom: 0;
+    }
+    .timeline-item:not(:last-child)::after {
+      content: ''; position: absolute;
+      left: 36px; top: 56px; bottom: 0;
+      width: 1px; background: var(--border);
+    }
+    .timeline-left {
+      width: 72px; flex-shrink: 0; padding: 18px 0;
+      display: flex; flex-direction: column; align-items: center; gap: 4px;
+    }
+    .timeline-dot {
+      width: 10px; height: 10px; border-radius: 50%;
+      background: var(--psych); flex-shrink: 0;
+    }
+    .timeline-date {
+      font-size: 8px; font-weight: 400; letter-spacing: 0.1em;
+      color: rgba(255,255,255,0.24); text-align: center; line-height: 1.4;
+    }
+    .timeline-card {
+      flex: 1; border: 1px solid var(--border);
+      padding: 18px 20px; margin: 14px 0;
+      cursor: pointer; transition: border-color 0.22s;
+      text-decoration: none; display: block;
+    }
+    .timeline-card:hover { border-color: var(--border-h); }
+    .timeline-trigger {
+      font-size: 14px; font-weight: 300; color: var(--text);
+      line-height: 1.4; margin-bottom: 8px;
+    }
+    .timeline-meta {
+      font-size: 9px; font-weight: 400; letter-spacing: 0.12em;
+      text-transform: uppercase; color: var(--text-mute);
+      display: flex; gap: 12px; align-items: center; margin-bottom: 10px;
+    }
+    .timeline-meta-dot { width: 2px; height: 2px; background: var(--text-mute); border-radius: 50%; }
+    .timeline-insights {
+      font-size: 11px; font-weight: 300; color: rgba(255,255,255,0.42);
+      line-height: 1.55; border-left: 2px solid rgba(138,120,168,0.25); padding-left: 12px;
+    }
+    .timeline-actions-done {
+      margin-top: 10px; font-size: 9px; font-weight: 400;
+      letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); opacity: 0.65;
+    }
+
+    /* ─── Insights collection ─── */
+    .insights-grid { display: flex; flex-direction: column; gap: 8px; }
+    .insight-card {
+      border: 1px solid var(--border); padding: 18px 20px;
+      transition: border-color 0.22s;
+    }
+    .insight-card:hover { border-color: var(--border-h); }
+    .insight-film {
+      font-size: 8px; font-weight: 400; letter-spacing: 0.16em;
+      text-transform: uppercase; color: var(--psych); opacity: 0.6;
+      margin-bottom: 8px;
+    }
+    .insight-text {
+      font-size: 14px; font-weight: 300; color: rgba(255,255,255,0.72);
+      line-height: 1.6;
+    }
+
+    /* ─── Actions tracker ─── */
+    .actions-tracker { display: flex; flex-direction: column; gap: 8px; }
+    .action-row {
+      display: flex; gap: 14px; align-items: flex-start;
+      padding: 14px 18px; border: 1px solid var(--border);
+      cursor: pointer; transition: all 0.22s;
+    }
+    .action-row:hover { border-color: var(--border-h); }
+    .action-row.done { border-color: rgba(192,144,96,0.18); background: var(--accent-bg); }
+    .action-check {
+      width: 15px; height: 15px; border: 1px solid rgba(255,255,255,0.18);
+      flex-shrink: 0; margin-top: 1px; display: flex;
+      align-items: center; justify-content: center; font-size: 8px;
+      transition: all 0.2s;
+    }
+    .action-row.done .action-check { border-color: var(--accent); color: var(--accent); }
+    .action-from { font-size: 8px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-mute); margin-bottom: 4px; }
+    .action-body { font-size: 12px; font-weight: 300; color: var(--text-dim); line-height: 1.5; }
+    .action-row.done .action-body { color: rgba(255,255,255,0.3); }
+
+    /* ─── Progress bar ─── */
+    .progress-block { border: 1px solid var(--border); padding: 18px 20px; margin-bottom: 24px; }
+    .progress-header { display: flex; justify-content: space-between; margin-bottom: 12px; }
+    .progress-title { font-size: 10px; font-weight: 400; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(255,255,255,0.38); }
+    .progress-pct { font-size: 10px; font-weight: 400; letter-spacing: 0.1em; color: var(--accent); }
+    .progress-track { height: 2px; background: rgba(255,255,255,0.08); }
+    .progress-fill { height: 100%; background: var(--accent); }
+
+    /* ─── Divider ─── */
+    .divider { height: 1px; background: var(--border); margin: 32px 0; }
+  </style>
+</head>
+<body>
+  <div class="grid-bg"></div>
+
+  <nav>
+    <a class="nav-logo" href="index.html">Brodonam</a>
+    <div class="nav-links">
+      <a class="nav-link" href="home.html">Discover</a>
+      <a class="nav-link active" href="library.html">Journey</a>
+      <a class="nav-link" href="couples.html">Partner</a>
+    </div>
+    <div class="nav-right">
+      <div class="nav-avatar">A</div>
+    </div>
+  </nav>
+
+  <main>
+    <div class="page-eyebrow">Your healing journey</div>
+    <h1 class="page-title">Everything the films have shown you about yourself.</h1>
+    <p class="page-sub">Your journey is a living record — the films you've watched, the insights you've saved, the actions you've taken. Healing isn't linear. This is yours.</p>
+
+    <!-- Stats -->
+    <div class="stats-row">
+      <div class="stat-block"><div class="stat-num" id="statFilms">7</div><div class="stat-label">Films watched</div></div>
+      <div class="stat-block"><div class="stat-num" id="statInsights">23</div><div class="stat-label">Insights saved</div></div>
+      <div class="stat-block"><div class="stat-num" id="statActions">18</div><div class="stat-label">Actions taken</div></div>
+      <div class="stat-block"><div class="stat-num" id="statPartner">3</div><div class="stat-label">Partner sessions</div></div>
+    </div>
+
+    <!-- Emotional arc chart -->
+    <div class="arc-block">
+      <div class="arc-label">Your emotional arc over time</div>
+      <div class="arc-chart" id="arcChart"></div>
+      <div class="arc-dates">
+        <span>Mar 1</span><span>Mar 8</span><span>Mar 15</span><span>Mar 22</span><span>Today</span>
+      </div>
+      <p class="arc-note">"What we're tracking isn't happiness — it's openness. Your willingness to feel has expanded noticeably over the past three weeks. That's the work."</p>
+    </div>
+
+    <!-- Tabs -->
+    <div class="lib-tabs">
+      <button class="lib-tab active" onclick="switchTab(this,'timeline')">Timeline</button>
+      <button class="lib-tab" onclick="switchTab(this,'insights')">Insights</button>
+      <button class="lib-tab" onclick="switchTab(this,'actions')">Actions</button>
+    </div>
+
+    <!-- Timeline panel -->
+    <div class="tab-panel active" id="tabTimeline">
+      <div class="timeline" id="timeline"></div>
+    </div>
+
+    <!-- Insights panel -->
+    <div class="tab-panel" id="tabInsights">
+      <div class="insights-grid" id="insightsGrid"></div>
+    </div>
+
+    <!-- Actions panel -->
+    <div class="tab-panel" id="tabActions">
+      <div class="progress-block">
+        <div class="progress-header">
+          <span class="progress-title">Actions completed</span>
+          <span class="progress-pct">18 / 35</span>
+        </div>
+        <div class="progress-track"><div class="progress-fill" style="width:51%"></div></div>
+      </div>
+      <div class="actions-tracker" id="actionsGrid"></div>
+    </div>
+  </main>
+
+  <script>
+  /* ── Arc chart ── */
+  const arcData = [28, 35, 40, 38, 48, 55, 42, 60, 58, 65, 62, 70, 68, 75, 78, 74, 82, 85, 80, 88];
+  const arcEl = document.getElementById('arcChart');
+  arcData.forEach((h, i) => {
+    const bar = document.createElement('div');
+    bar.className = 'arc-bar' + (i >= arcData.length - 4 ? ' active' : '');
+    bar.style.height = h + '%';
+    bar.title = `Week ${Math.floor(i/4)+1}`;
+    arcEl.appendChild(bar);
+  });
+
+  /* ── Timeline data ── */
+  const WATCHED = [
+    {
+      date: 'Apr 25\n2025', trigger: '"Fear of losing someone before you were ready"',
+      cat: 'grief', dur: '2 hr 8 min', mode: 'Solo',
+      insight: '"The moment he erases her isn\'t about forgetting — it\'s about the unbearable weight of remembering."',
+      actions: '5 of 7 actions taken', g: 'linear-gradient(155deg,#1a0a2e,#0d0f2a,#060508)'
+    },
+    {
+      date: 'Apr 18\n2025', trigger: '"When love turns into a battleground"',
+      cat: 'relationship', dur: '2 hr 17 min', mode: 'With partner',
+      insight: '"They don\'t argue about the dishes. They argue about being invisible."',
+      actions: '6 of 7 actions taken', g: 'linear-gradient(155deg,#2e0a0a,#1a0808,#060508)'
+    },
+    {
+      date: 'Apr 10\n2025', trigger: '"Afraid to let anyone truly see you"',
+      cat: 'vulnerability', dur: '2 hr 6 min', mode: 'Solo',
+      insight: '"We are most afraid of being seen by the people whose seeing would mean the most."',
+      actions: '4 of 7 actions taken', g: 'linear-gradient(155deg,#0a1a0a,#0a120a,#050608)'
+    },
+    {
+      date: 'Apr 3\n2025', trigger: '"The loneliness you mistook for love"',
+      cat: 'attachment', dur: '2 hr 6 min', mode: 'Solo',
+      insight: '"Loneliness dressed up as love is still loneliness — it\'s just harder to name."',
+      actions: '3 of 7 actions taken', g: 'linear-gradient(155deg,#0a0d2e,#080a1a,#060509)'
+    },
+  ];
+
+  const tl = document.getElementById('timeline');
+  WATCHED.forEach(w => {
+    tl.innerHTML += `
+      <div class="timeline-item">
+        <div class="timeline-left">
+          <div class="timeline-dot"></div>
+          <div class="timeline-date">${w.date}</div>
+        </div>
+        <a class="timeline-card" href="reflection.html">
+          <div class="timeline-trigger">${w.trigger}</div>
+          <div class="timeline-meta">
+            <span>${w.cat}</span><span class="timeline-meta-dot"></span>
+            <span>${w.dur}</span><span class="timeline-meta-dot"></span>
+            <span>${w.mode}</span>
+          </div>
+          <div class="timeline-insights">${w.insight}</div>
+          <div class="timeline-actions-done">◆ ${w.actions}</div>
+        </a>
+      </div>`;
+  });
+
+  /* ── Insights ── */
+  const ALL_INSIGHTS = [
+    { film: 'Fear of losing someone before you were ready', text: 'The moment he erases her isn\'t about forgetting — it\'s about the unbearable weight of remembering.' },
+    { film: 'Fear of losing someone before you were ready', text: 'She didn\'t leave because she stopped loving. She left because staying had become an act of self-destruction.' },
+    { film: 'When love turns into a battleground', text: 'They don\'t argue about the dishes. They argue about being invisible to the person who sees them most.' },
+    { film: 'When love turns into a battleground', text: 'Love doesn\'t end in one day. It ends in all the small moments when we chose to be right instead of close.' },
+    { film: 'Afraid to let anyone truly see you', text: 'We are most afraid of being seen by the people whose seeing would mean the most.' },
+    { film: 'Afraid to let anyone truly see you', text: 'The armour we wear to protect ourselves from pain is often what causes the most of it.' },
+    { film: 'The loneliness you mistook for love', text: 'Loneliness dressed up as love is still loneliness — it\'s just harder to name.' },
+    { film: 'The loneliness you mistook for love', text: 'He doesn\'t need her to be perfect. He needs her to be present.' },
+  ];
+
+  const ig = document.getElementById('insightsGrid');
+  ALL_INSIGHTS.forEach(ins => {
+    ig.innerHTML += `
+      <div class="insight-card">
+        <div class="insight-film">${ins.film}</div>
+        <div class="insight-text">"${ins.text}"</div>
+      </div>`;
+  });
+
+  /* ── Actions ── */
+  const ALL_ACTIONS = [
+    { film: 'Fear of losing someone…', text: 'Write a letter to the person you\'ve been grieving — don\'t send it, just write it.', done: true },
+    { film: 'Fear of losing someone…', text: 'Identify one memory you\'ve been trying to avoid. Sit with it for 5 minutes.', done: true },
+    { film: 'Fear of losing someone…', text: 'Ask yourself: what did this loss teach me that I want to keep?', done: true },
+    { film: 'Fear of losing someone…', text: 'Share one thing you\'ve never told someone close to you about how this has felt.', done: false },
+    { film: 'When love turns into a battleground', text: 'Before your next disagreement, pause and say: "I feel ___. What I need is ___."', done: true },
+    { film: 'When love turns into a battleground', text: 'Write down one thing your partner does that you\'ve never thanked them for.', done: true },
+    { film: 'When love turns into a battleground', text: 'Have one conversation this week that starts with: "Can I be honest about something small?"', done: false },
+    { film: 'Afraid to let anyone truly see you', text: 'Tell someone something true about yourself that you\'ve been protecting.', done: true },
+    { film: 'Afraid to let anyone truly see you', text: 'Journal: What am I most afraid someone would think of me if they knew the full truth?', done: false },
+  ];
+
+  const ag = document.getElementById('actionsGrid');
+  ALL_ACTIONS.forEach((a, i) => {
+    const d = document.createElement('div');
+    d.className = 'action-row' + (a.done ? ' done' : '');
+    d.innerHTML = `
+      <div class="action-check" onclick="toggleAction(this.closest('.action-row'))">${a.done ? '✓' : ''}</div>
+      <div><div class="action-from">${a.film}</div><div class="action-body">${a.text}</div></div>`;
+    ag.appendChild(d);
+  });
+
+  function toggleAction(el) {
+    const done = el.classList.toggle('done');
+    el.querySelector('.action-check').textContent = done ? '✓' : '';
+  }
+
+  /* ── Tabs ── */
+  function switchTab(el, name) {
+    document.querySelectorAll('.lib-tab').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    const panel = { timeline:'tabTimeline', insights:'tabInsights', actions:'tabActions' }[name];
+    document.getElementById(panel).classList.add('active');
+  }
+
+  /* ── Personalise stats from localStorage ── */
+  try {
+    const sessions = JSON.parse(localStorage.getItem('brodonam_sessions') || '[]');
+    if (sessions.length > 0) {
+      const totalFilms    = sessions.length + 4;                   // add sample base
+      const totalInsights = sessions.reduce((s,x) => s + (x.insights||0), 0) + 15;
+      const partnerSessions = sessions.filter(s => s.mode === 'partner').length + 1;
+
+      document.getElementById('statFilms').textContent    = totalFilms;
+      document.getElementById('statInsights').textContent = totalInsights;
+
+      /* Prepend real sessions to the top of the timeline */
+      const tl = document.getElementById('timeline');
+      const existing = tl.innerHTML;
+      tl.innerHTML = '';
+      sessions.slice(0, 3).forEach(s => {
+        const d = new Date(s.date);
+        const dateStr = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + '\n' + d.getFullYear();
+        tl.innerHTML += `
+          <div class="timeline-item">
+            <div class="timeline-left">
+              <div class="timeline-dot" style="border-color:rgba(192,144,96,0.5)"></div>
+              <div class="timeline-date">${dateStr}</div>
+            </div>
+            <a class="timeline-card" href="reflection.html">
+              <div class="timeline-trigger">${s.trigger || 'A film'}</div>
+              <div class="timeline-meta">
+                <span>${(s.categories||[''])[0]}</span>
+                <span class="timeline-meta-dot"></span>
+                <span>${s.insights || 0} insight${s.insights !== 1 ? 's' : ''}</span>
+              </div>
+              <div class="timeline-actions-done" style="color:var(--accent);opacity:0.7;font-size:9px;letter-spacing:0.12em;text-transform:uppercase;margin-top:10px">◆ Recently watched</div>
+            </a>
+          </div>`;
+      });
+      tl.innerHTML += existing;
+    }
+  } catch(e) {}
+  </script>
+</body>
+</html>

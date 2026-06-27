@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Brodonam — Getting to know you</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #060609;
+      --border:    rgba(255,255,255,0.08);
+      --border-h:  rgba(255,255,255,0.22);
+      --text:      rgba(255,255,255,0.84);
+      --text-dim:  rgba(255,255,255,0.48);
+      --text-mute: rgba(255,255,255,0.26);
+      --accent:    #C09060;
+      --accent-bg: rgba(192,144,96,0.12);
+      --psych:     #8A78A8;
+      --psych-bg:  rgba(138,120,168,0.12);
+      --grid:      rgba(255,255,255,0.044);
+      --sans:      'Inter', -apple-system, sans-serif;
+      --serif:     var(--sans);
+    }
+
+    html, body {
+      height: 100%; background: var(--bg); color: var(--text);
+      font-family: var(--sans); font-weight: 300;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .grid-bg {
+      position: fixed; inset: 0; pointer-events: none; z-index: 0;
+      background-image:
+        linear-gradient(var(--grid) 1px, transparent 1px),
+        linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+      background-size: 40px 40px;
+    }
+
+    /* ─── Layout ─── */
+    .shell {
+      position: relative; z-index: 1;
+      min-height: 100dvh; min-height: 100vh;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 60px 24px;
+    }
+
+    /* ─── Progress ─── */
+    .progress-track {
+      position: fixed; top: 0; left: 0; right: 0;
+      height: 2px; background: rgba(255,255,255,0.06); z-index: 20;
+    }
+    .progress-fill {
+      height: 100%; background: var(--accent);
+      transition: width 0.5s cubic-bezier(0.22,1,0.36,1);
+    }
+
+    /* ─── Header ─── */
+    .onboard-header {
+      position: fixed; top: 0; left: 0; right: 0;
+      padding: 20px 28px;
+      display: flex; align-items: center; justify-content: space-between;
+      z-index: 15; pointer-events: none;
+    }
+    .header-logo {
+      font-size: 10px; font-weight: 400;
+      letter-spacing: 0.28em; text-transform: uppercase;
+      color: rgba(255,255,255,0.24); pointer-events: all;
+      text-decoration: none;
+    }
+    .header-step {
+      font-size: 10px; font-weight: 400;
+      letter-spacing: 0.16em; text-transform: uppercase;
+      color: rgba(255,255,255,0.22);
+    }
+
+    /* ─── Form Wrap ─── */
+    .form-wrap {
+      width: 100%; max-width: 480px;
+    }
+
+    /* ─── Steps ─── */
+    .step {
+      display: none; flex-direction: column;
+      opacity: 0; transform: translateY(12px);
+      transition: opacity 0.34s ease, transform 0.34s ease;
+    }
+    .step.active { display: flex; }
+    .step.visible { opacity: 1; transform: translateY(0); }
+
+    .step-eyebrow {
+      font-size: 9px; font-weight: 400;
+      letter-spacing: 0.2em; text-transform: uppercase;
+      color: var(--psych); opacity: 0.7; margin-bottom: 14px;
+    }
+
+    .step-title {
+      font-size: clamp(18px, 3vw, 24px);
+      font-weight: 300;
+      color: rgba(255,255,255,0.82);
+      line-height: 1.38; margin-bottom: 32px;
+    }
+
+    /* Choice cards */
+    .choices { display: flex; flex-direction: column; gap: 8px; }
+    .choice-card {
+      font-family: var(--sans); text-align: left;
+      background: transparent;
+      border: 1px solid var(--border);
+      color: rgba(255,255,255,0.68);
+      padding: 15px 20px; cursor: pointer;
+      transition: border-color 0.22s, background 0.22s, color 0.22s;
+      display: flex; flex-direction: column; gap: 3px;
+    }
+    .choice-card:hover, .choice-card.selected {
+      border-color: var(--border-h);
+      background: rgba(255,255,255,0.025);
+      color: rgba(255,255,255,0.88);
+    }
+    .choice-card.selected {
+      border-color: rgba(192,144,96,0.36);
+      background: var(--accent-bg);
+      color: var(--text);
+    }
+    .choice-label { font-size: 14px; font-weight: 300; letter-spacing: 0.01em; }
+    .choice-sub {
+      font-size: 11px; color: rgba(255,255,255,0.4); letter-spacing: 0.04em;
+    }
+    .choice-card:hover .choice-sub, .choice-card.selected .choice-sub {
+      color: rgba(255,255,255,0.55);
+    }
+
+    /* Emotion grid */
+    .emotion-grid {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .emotion-card {
+      font-family: var(--sans); text-align: left;
+      background: transparent;
+      border: 1px solid var(--border);
+      padding: 16px 18px; cursor: pointer;
+      transition: all 0.22s ease;
+      display: flex; flex-direction: column; gap: 4px;
+    }
+    .emotion-card:hover, .emotion-card.selected {
+      border-color: var(--border-h);
+      background: rgba(255,255,255,0.022);
+    }
+    .emotion-card.selected {
+      border-color: rgba(138,120,168,0.4);
+      background: var(--psych-bg);
+    }
+    .emotion-icon { font-size: 18px; margin-bottom: 4px; }
+    .emotion-label { font-size: 13px; font-weight: 300; color: var(--text); }
+    .emotion-desc { font-size: 10px; color: var(--text-mute); letter-spacing: 0.04em; }
+
+    /* Fields */
+    .field { margin-bottom: 24px; }
+    .field-label {
+      display: block; font-size: 9px; font-weight: 400;
+      letter-spacing: 0.18em; text-transform: uppercase;
+      color: rgba(255,255,255,0.42); margin-bottom: 10px;
+    }
+    .field-input, .field-textarea {
+      width: 100%; font-family: var(--sans);
+      font-size: 14px; font-weight: 300;
+      color: rgba(255,255,255,0.82); background: transparent;
+      border: none; border-bottom: 1px solid rgba(255,255,255,0.13);
+      padding: 5px 0 9px; outline: none;
+      transition: border-color 0.22s;
+      -webkit-appearance: none; border-radius: 0;
+    }
+    .field-input::placeholder, .field-textarea::placeholder { color: rgba(255,255,255,0.26); }
+    .field-input:focus, .field-textarea:focus { border-bottom-color: rgba(255,255,255,0.45); }
+    .field-textarea { resize: none; height: 80px; line-height: 1.65; }
+
+    /* Chips */
+    .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+    .chip {
+      font-family: var(--sans); font-size: 10px; font-weight: 400;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      color: rgba(255,255,255,0.52); background: transparent;
+      border: 1px solid rgba(255,255,255,0.09);
+      padding: 7px 14px; cursor: pointer;
+      transition: all 0.18s ease;
+    }
+    .chip:hover, .chip.on {
+      border-color: var(--border-h);
+      color: rgba(255,255,255,0.82);
+      background: rgba(255,255,255,0.04);
+    }
+    .chip.on {
+      border-color: rgba(192,144,96,0.35);
+      color: var(--accent);
+      background: var(--accent-bg);
+    }
+
+    /* Actions */
+    .form-actions {
+      display: flex; align-items: center;
+      justify-content: space-between; margin-top: 28px;
+    }
+    .back-btn {
+      font-family: var(--sans); font-size: 10px; font-weight: 400;
+      letter-spacing: 0.18em; text-transform: uppercase;
+      color: rgba(255,255,255,0.28); background: none; border: none;
+      cursor: pointer; transition: color 0.22s;
+    }
+    .back-btn:hover { color: rgba(255,255,255,0.58); }
+
+    .next-btn {
+      font-family: var(--sans); font-size: 10px; font-weight: 400;
+      letter-spacing: 0.18em; text-transform: uppercase;
+      color: #060609; background: rgba(255,255,255,0.88);
+      border: none; padding: 12px 28px; cursor: pointer;
+      transition: background 0.22s, opacity 0.22s;
+    }
+    .next-btn:hover { background: rgba(255,255,255,1); }
+    .next-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+    /* ─── Final step ─── */
+    .final-card {
+      background: rgba(255,255,255,0.026);
+      border: 1px solid var(--border);
+      padding: 28px 24px; margin-bottom: 24px;
+    }
+    .final-label {
+      font-size: 9px; font-weight: 400; letter-spacing: 0.18em;
+      text-transform: uppercase; color: var(--psych); opacity: 0.7;
+      margin-bottom: 10px;
+    }
+    .final-value {
+      font-size: 14px; font-weight: 300; color: var(--text);
+      line-height: 1.5;
+    }
+
+    /* ─── Step 5 ready ─── */
+    .ready-message {
+      font-size: clamp(14px, 2.2vw, 18px);
+      color: rgba(255,255,255,0.6); line-height: 1.7;
+      margin-bottom: 32px;
+    }
+
+    /* ─── Divider ─── */
+    .divider { height: 1px; background: var(--border); margin: 24px 0; }
+  </style>
+</head>
+<body>
+  <div class="grid-bg"></div>
+
+  <div class="progress-track">
+    <div class="progress-fill" id="progressFill" style="width:20%"></div>
+  </div>
+
+  <div class="onboard-header">
+    <a class="header-logo" href="index.html">Brodonam</a>
+    <span class="header-step" id="stepLabel">Step 1 of 5</span>
+  </div>
+
+  <div class="shell">
+    <div class="form-wrap">
+
+      <!-- ── Step 1: Viewing Mode ── -->
+      <div class="step" id="step1">
+        <div class="step-eyebrow">Welcome</div>
+        <div class="step-title">How are you watching today?</div>
+        <div class="choices">
+          <button class="choice-card" onclick="selectChoice(this,'mode','solo')">
+            <span class="choice-label">Just me</span>
+            <span class="choice-sub">Personal healing, self-discovery, or quiet reflection</span>
+          </button>
+          <button class="choice-card" onclick="selectChoice(this,'mode','partner')">
+            <span class="choice-label">With my partner</span>
+            <span class="choice-sub">A shared journey through what's been hard to say</span>
+          </button>
+          <button class="choice-card" onclick="selectChoice(this,'mode','family')">
+            <span class="choice-label">With my family</span>
+            <span class="choice-sub">Something for everyone to feel together</span>
+          </button>
+        </div>
+        <div class="form-actions">
+          <span></span>
+          <button class="next-btn" id="next1" onclick="goStep(2)" disabled>Continue</button>
+        </div>
+      </div>
+
+      <!-- ── Step 2: Emotional State ── -->
+      <div class="step" id="step2">
+        <div class="step-eyebrow">Emotional Check-in</div>
+        <div class="step-title">What are you carrying right now?</div>
+        <div class="emotion-grid">
+          <button class="emotion-card" onclick="selectEmotion(this,'grief')">
+            <div class="emotion-icon">🌫</div>
+            <div class="emotion-label">Grief or loss</div>
+            <div class="emotion-desc">Something or someone is gone</div>
+          </button>
+          <button class="emotion-card" onclick="selectEmotion(this,'disconnection')">
+            <div class="emotion-icon">🪞</div>
+            <div class="emotion-label">Disconnection</div>
+            <div class="emotion-desc">Feeling unseen or far away</div>
+          </button>
+          <button class="emotion-card" onclick="selectEmotion(this,'anxiety')">
+            <div class="emotion-icon">🌀</div>
+            <div class="emotion-label">Anxiety or dread</div>
+            <div class="emotion-desc">A mind that won't quiet</div>
+          </button>
+          <button class="emotion-card" onclick="selectEmotion(this,'relationship')">
+            <div class="emotion-icon">⚡</div>
+            <div class="emotion-label">Relationship pain</div>
+            <div class="emotion-desc">Love that's hurting right now</div>
+          </button>
+          <button class="emotion-card" onclick="selectEmotion(this,'identity')">
+            <div class="emotion-icon">🌱</div>
+            <div class="emotion-label">Identity or purpose</div>
+            <div class="emotion-desc">Not sure who you are becoming</div>
+          </button>
+          <button class="emotion-card" onclick="selectEmotion(this,'numbness')">
+            <div class="emotion-icon">🧊</div>
+            <div class="emotion-label">Numbness</div>
+            <div class="emotion-desc">Feeling nothing — or everything</div>
+          </button>
+          <button class="emotion-card" onclick="selectEmotion(this,'family')">
+            <div class="emotion-icon">🏚</div>
+            <div class="emotion-label">Family wounds</div>
+            <div class="emotion-desc">Old pain that runs deep</div>
+          </button>
+          <button class="emotion-card" onclick="selectEmotion(this,'self-worth')">
+            <div class="emotion-icon">🌒</div>
+            <div class="emotion-label">Self-worth</div>
+            <div class="emotion-desc">Struggling to believe you're enough</div>
+          </button>
+        </div>
+        <div class="form-actions">
+          <button class="back-btn" onclick="goStep(1)">← Back</button>
+          <button class="next-btn" id="next2" onclick="goStep(3)" disabled>Continue</button>
+        </div>
+      </div>
+
+      <!-- ── Step 3: Context ── -->
+      <div class="step" id="step3">
+        <div class="step-eyebrow">Your Story</div>
+        <div class="step-title">Tell me a little more. What's been happening?</div>
+        <div class="field">
+          <label class="field-label">In your own words <span style="opacity:0.4">(optional)</span></label>
+          <textarea class="field-textarea" id="contextText"
+            placeholder="You don't have to be precise. Just say what comes."
+            oninput="checkStep3()"></textarea>
+        </div>
+        <div class="field">
+          <label class="field-label">How long has this been with you?</label>
+          <div class="chips" id="durationChips">
+            <button class="chip" onclick="toggleDuration(this,'recent')">Just recently</button>
+            <button class="chip" onclick="toggleDuration(this,'weeks')">A few weeks</button>
+            <button class="chip" onclick="toggleDuration(this,'months')">Several months</button>
+            <button class="chip" onclick="toggleDuration(this,'years')">Years</button>
+            <button class="chip" onclick="toggleDuration(this,'always')">As long as I remember</button>
+          </div>
+        </div>
+        <div class="form-actions">
+          <button class="back-btn" onclick="goStep(2)">← Back</button>
+          <button class="next-btn" id="next3" onclick="goStep(4)" disabled>Continue</button>
+        </div>
+      </div>
+
+      <!-- ── Step 4: Film Preferences ── -->
+      <div class="step" id="step4">
+        <div class="step-eyebrow">Your Viewing Preferences</div>
+        <div class="step-title">What kind of film feels right for tonight?</div>
+        <div class="choices" id="genreChoices">
+          <button class="choice-card" onclick="selectChoice(this,'genre','drama')">
+            <span class="choice-label">Quiet drama</span>
+            <span class="choice-sub">Slow, intimate, character-driven stories</span>
+          </button>
+          <button class="choice-card" onclick="selectChoice(this,'genre','romance')">
+            <span class="choice-label">Romance with depth</span>
+            <span class="choice-sub">Love stories that don't look away from the hard parts</span>
+          </button>
+          <button class="choice-card" onclick="selectChoice(this,'genre','family-film')">
+            <span class="choice-label">Family journey</span>
+            <span class="choice-sub">Stories about how we hurt each other and find our way back</span>
+          </button>
+          <button class="choice-card" onclick="selectChoice(this,'genre','redemption')">
+            <span class="choice-label">Redemption arc</span>
+            <span class="choice-sub">Someone lost finding their way back to themselves</span>
+          </button>
+          <button class="choice-card" onclick="selectChoice(this,'genre','any')">
+            <span class="choice-label">Surprise me</span>
+            <span class="choice-sub">I trust Brodonam to choose for me</span>
+          </button>
+        </div>
+        <div class="form-actions">
+          <button class="back-btn" onclick="goStep(3)">← Back</button>
+          <button class="next-btn" id="next4" onclick="goStep(5)" disabled>Continue</button>
+        </div>
+      </div>
+
+      <!-- ── Step 5: Ready ── -->
+      <div class="step" id="step5">
+        <div class="step-eyebrow">Your Space Is Ready</div>
+        <div class="step-title">Here's what Brodonam has prepared for you.</div>
+
+        <div class="final-card" id="summaryCard"></div>
+
+        <p class="ready-message" id="readyMsg"></p>
+
+        <div class="choices">
+          <a class="choice-card" href="home.html" style="text-decoration:none">
+            <span class="choice-label">Take me to my film</span>
+            <span class="choice-sub">Brodonam will walk alongside you</span>
+          </a>
+          <a class="choice-card" href="couples.html" id="coupleOption" style="text-decoration:none;display:none">
+            <span class="choice-label">Set up partner session</span>
+            <span class="choice-sub">Invite your partner before we begin</span>
+          </a>
+        </div>
+
+        <div class="form-actions">
+          <button class="back-btn" onclick="goStep(4)">← Back</button>
+        </div>
+      </div>
+
+    </div><!-- /form-wrap -->
+  </div><!-- /shell -->
+
+  <script>
+  const state = { mode: null, emotion: null, duration: null, genre: null, context: '' };
+  const STEPS = 5;
+  let current = 1;
+
+  /* ── Navigation ── */
+  function goStep(n) {
+    if (n === 5) buildSummary();
+    const from = document.getElementById('step' + current);
+    if (from) { from.classList.remove('visible'); setTimeout(() => from.classList.remove('active'), 320); }
+    current = n;
+    document.getElementById('stepLabel').textContent = `Step ${n} of ${STEPS}`;
+    document.getElementById('progressFill').style.width = ((n / STEPS) * 100) + '%';
+    const to = document.getElementById('step' + n);
+    to.classList.add('active');
+    requestAnimationFrame(() => requestAnimationFrame(() => to.classList.add('visible')));
+  }
+
+  /* ── Choice helpers ── */
+  function selectChoice(el, key, val) {
+    el.closest('.choices, .emotion-grid').querySelectorAll('.choice-card,.emotion-card').forEach(c => c.classList.remove('selected'));
+    el.classList.add('selected');
+    state[key] = val;
+    const btn = { mode: 'next1', genre: 'next4' }[key];
+    if (btn) document.getElementById(btn).disabled = false;
+  }
+
+  function selectEmotion(el, val) {
+    document.querySelectorAll('.emotion-card').forEach(c => c.classList.remove('selected'));
+    el.classList.add('selected');
+    state.emotion = val;
+    document.getElementById('next2').disabled = false;
+  }
+
+  function toggleDuration(el, val) {
+    document.querySelectorAll('#durationChips .chip').forEach(c => c.classList.remove('on'));
+    el.classList.add('on');
+    state.duration = val;
+    checkStep3();
+  }
+
+  function checkStep3() {
+    state.context = document.getElementById('contextText').value;
+    document.getElementById('next3').disabled = !state.duration;
+  }
+
+  /* ── Summary ── */
+  const EMOTION_LABELS = {
+    grief:'Grief or loss', disconnection:'Disconnection', anxiety:'Anxiety or dread',
+    relationship:'Relationship pain', identity:'Identity or purpose',
+    numbness:'Numbness', family:'Family wounds', 'self-worth':'Self-worth'
+  };
+  const GENRE_LABELS = {
+    drama:'Quiet drama', romance:'Romance with depth',
+    'family-film':'Family journey', redemption:'Redemption arc', any:'Curated by Brodonam'
+  };
+  const MODE_LABELS = { solo:'Solo', partner:'With partner', family:'With family' };
+  const READY_MSGS = {
+    solo:    "You're watching alone — and that is enough. The right story is already waiting for you. Brodonam will sit with you through every hard moment.",
+    partner: "Watching together is an act of courage. The film will do some of the talking tonight. Brodonam will guide you both, gently.",
+    family:  "Families heal in the dark together sometimes. The story you're about to watch carries something for everyone in the room."
+  };
+
+  function buildSummary() {
+    document.getElementById('summaryCard').innerHTML = `
+      <div class="final-label">Your session profile</div>
+      <div style="display:grid;gap:14px">
+        <div><div class="final-label" style="margin-bottom:4px">Watching mode</div><div class="final-value">${MODE_LABELS[state.mode] || '—'}</div></div>
+        <div><div class="final-label" style="margin-bottom:4px">What you're carrying</div><div class="final-value">${EMOTION_LABELS[state.emotion] || '—'}</div></div>
+        <div><div class="final-label" style="margin-bottom:4px">Duration</div><div class="final-value">${state.duration || '—'}</div></div>
+        <div><div class="final-label" style="margin-bottom:4px">Film style</div><div class="final-value">${GENRE_LABELS[state.genre] || '—'}</div></div>
+      </div>`;
+
+    document.getElementById('readyMsg').textContent = READY_MSGS[state.mode] || READY_MSGS.solo;
+    if (state.mode === 'partner') document.getElementById('coupleOption').style.display = 'flex';
+
+    /* Persist profile so home.html can personalise */
+    try {
+      localStorage.setItem('brodonam_profile', JSON.stringify({
+        mode:     state.mode,
+        emotion:  state.emotion,
+        duration: state.duration,
+        genre:    state.genre,
+        context:  state.context,
+        source:   'onboarding'
+      }));
+    } catch(e) {}
+  }
+
+  /* ── Init ── */
+  window.addEventListener('DOMContentLoaded', () => {
+    const s1 = document.getElementById('step1');
+    s1.classList.add('active');
+    requestAnimationFrame(() => requestAnimationFrame(() => s1.classList.add('visible')));
+  });
+  </script>
+</body>
+</html>

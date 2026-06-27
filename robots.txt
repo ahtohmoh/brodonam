@@ -1,0 +1,4 @@
+# Staging — keep crawlers out until the public launch + legal review.
+# When you go public, change this to allow indexing of the pages you want found.
+User-agent: *
+Disallow: /

@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Brodonam — Discover</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:       #060609;
+      --surface:  #0c0c12;
+      --border:   rgba(255,255,255,0.07);
+      --border-h: rgba(255,255,255,0.16);
+      --text:     rgba(255,255,255,0.84);
+      --dim:      rgba(255,255,255,0.46);
+      --mute:     rgba(255,255,255,0.24);
+      --accent:   #C09060;
+      --acc-bg:   rgba(192,144,96,0.10);
+      --psych:    #8A78A8;
+      --grid:     rgba(255,255,255,0.036);
+      --nav-h:    56px;
+      --sans:     'Inter', -apple-system, sans-serif;
+    }
+
+    html { background: var(--bg); }
+    body {
+      min-height: 100vh; background: var(--bg);
+      color: var(--text); font-family: var(--sans);
+      font-weight: 300; -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    .grid-bg {
+      position: fixed; inset: 0; pointer-events: none; z-index: 0;
+      background-image:
+        linear-gradient(var(--grid) 1px, transparent 1px),
+        linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+      background-size: 40px 40px;
+    }
+
+    /* ══════════════════════════════════════
+       NAV
+    ══════════════════════════════════════ */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; height: var(--nav-h);
+      z-index: 200;
+      background: linear-gradient(to bottom, rgba(6,6,9,0.98), rgba(6,6,9,0.80));
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      display: flex; align-items: center; padding: 0 28px; gap: 0;
+    }
+    .nav-logo {
+      font-size: 10px; font-weight: 400; letter-spacing: 0.34em;
+      text-transform: uppercase; color: rgba(255,255,255,0.22);
+      text-decoration: none; margin-right: auto; transition: color .2s;
+    }
+    .nav-logo:hover { color: rgba(255,255,255,0.52); }
+    .nav-links { display: flex; gap: 26px; margin-right: 24px; }
+    .nav-link {
+      font-size: 8.5px; font-weight: 400; letter-spacing: 0.18em;
+      text-transform: uppercase; color: rgba(255,255,255,0.28);
+      text-decoration: none; transition: color .2s; white-space: nowrap;
+    }
+    .nav-link:hover { color: rgba(255,255,255,0.72); }
+    .nav-link.active { color: rgba(255,255,255,0.75); }
+    .nav-right { display: flex; align-items: center; gap: 14px; }
+    .nav-mood {
+      font-size: 7px; letter-spacing: 0.14em; text-transform: uppercase;
+      color: var(--psych); border: 1px solid rgba(138,120,168,0.20);
+      padding: 4px 9px; opacity: 0.68; white-space: nowrap; display: none;
+    }
+    .nav-search {
+      background: none; border: none; cursor: pointer;
+      color: rgba(255,255,255,0.28); padding: 6px; display: flex;
+      align-items: center; transition: color .2s;
+    }
+    .nav-search:hover { color: rgba(255,255,255,0.65); }
+    /* Check-in button in nav */
+    .nav-checkin {
+      font-size: 7.5px; letter-spacing: 0.16em; text-transform: uppercase;
+      color: var(--accent); border: 1px solid rgba(192,144,96,0.22);
+      background: rgba(192,144,96,0.06); padding: 5px 11px;
+      cursor: pointer; font-family: var(--sans); transition: all .2s;
+      text-decoration: none;
+    }
+    .nav-checkin:hover { background: rgba(192,144,96,0.12); }
+
+    /* ══════════════════════════════════════
+       HERO
+    ══════════════════════════════════════ */
+    .hero {
+      position: relative; width: 100%;
+      height: clamp(320px, 48vw, 500px);
+      overflow: hidden; margin-top: var(--nav-h);
+    }
+    .hero-bg {
+      position: absolute; inset: 0;
+      background-size: 400% 400%;
+      animation: heroDrift 22s ease-in-out infinite;
+      transition: background 1.4s ease;
+    }
+    @keyframes heroDrift { 0%,100%{background-position:0% 50%} 50%{background-position:100% 50%} }
+    .hero-grain {
+      position: absolute; inset: 0; opacity: 0.042; pointer-events: none;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+      background-size: 180px 180px;
+    }
+    .hero-vignette {
+      position: absolute; inset: 0; pointer-events: none;
+      background:
+        linear-gradient(to right, rgba(6,6,9,.97) 0%, rgba(6,6,9,.60) 44%, rgba(6,6,9,.08) 100%),
+        linear-gradient(to top,   rgba(6,6,9,.96) 0%, transparent 52%);
+    }
+    .hero-content {
+      position: absolute; bottom: 0; left: 0;
+      padding: 44px 44px 40px; max-width: 580px;
+    }
+    .hero-eyebrow {
+      font-size: 7px; letter-spacing: 0.26em; text-transform: uppercase;
+      color: var(--psych); opacity: .65; margin-bottom: 14px;
+    }
+    .hero-trigger {
+      font-size: clamp(17px, 2.8vw, 34px); font-weight: 300;
+      color: rgba(255,255,255,.88); line-height: 1.34; margin-bottom: 14px;
+      letter-spacing: -0.01em;
+    }
+    .hero-synopsis {
+      font-size: 12px; font-weight: 300;
+      color: rgba(255,255,255,.40); line-height: 1.70;
+      max-width: 380px; margin-bottom: 22px;
+    }
+    .hero-tags { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 22px; }
+    .hero-tag {
+      font-size: 7px; letter-spacing: 0.15em; text-transform: uppercase;
+      color: rgba(255,255,255,.28); border: 1px solid rgba(255,255,255,.10);
+      padding: 3px 8px;
+    }
+    .hero-dur { font-size: 8px; color: rgba(255,255,255,.22); letter-spacing: .10em; }
+    .hero-btns { display: flex; gap: 9px; }
+    .hero-play {
+      font-size: 9px; letter-spacing: .20em; text-transform: uppercase;
+      background: rgba(255,255,255,.88); color: #060609;
+      border: none; padding: 11px 24px; cursor: pointer;
+      text-decoration: none; transition: background .2s;
+    }
+    .hero-play:hover { background: #fff; }
+    .hero-info {
+      font-size: 9px; letter-spacing: .20em; text-transform: uppercase;
+      background: rgba(255,255,255,.07); color: rgba(255,255,255,.56);
+      border: 1px solid rgba(255,255,255,.12); padding: 11px 20px;
+      cursor: pointer; text-decoration: none; transition: all .2s;
+    }
+    .hero-info:hover { background: rgba(255,255,255,.13); color: rgba(255,255,255,.85); }
+
+    /* Companion whisper — bottom-right */
+    .hero-companion {
+      position: absolute; right: 36px; bottom: 40px;
+      max-width: 240px;
+      border: 1px solid rgba(138,120,168,0.18);
+      background: rgba(6,6,9,0.64);
+      backdrop-filter: blur(16px) saturate(0%) brightness(1.1);
+      padding: 14px 16px;
+    }
+    .hc-dot {
+      display: inline-block; width: 5px; height: 5px;
+      background: var(--psych); border-radius: 50%;
+      animation: hcpulse 2.8s ease-in-out infinite;
+      margin-right: 6px; margin-bottom: 8px;
+    }
+    @keyframes hcpulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.36;transform:scale(.72)} }
+    .hc-text {
+      font-size: 11px; font-weight: 300;
+      color: rgba(255,255,255,.48); line-height: 1.58;
+    }
+    .hc-link {
+      display: block; margin-top: 10px;
+      font-size: 7.5px; letter-spacing: 0.18em; text-transform: uppercase;
+      color: var(--accent); text-decoration: none; transition: opacity .2s;
+    }
+    .hc-link:hover { opacity: .64; }
+
+    /* ══════════════════════════════════════
+       FILTER CHIPS
+    ══════════════════════════════════════ */
+    .filter-strip {
+      position: relative; z-index: 1;
+      padding: 20px 28px 0;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .filter-label {
+      font-size: 7px; letter-spacing: .22em; text-transform: uppercase;
+      color: rgba(255,255,255,.22); white-space: nowrap; flex-shrink: 0;
+    }
+    .chips {
+      display: flex; gap: 5px; overflow-x: auto;
+      scrollbar-width: none; padding-bottom: 2px;
+    }
+    .chips::-webkit-scrollbar { display: none; }
+    .chip {
+      font-size: 7.5px; letter-spacing: .14em; text-transform: uppercase;
+      color: rgba(255,255,255,.34); border: 1px solid rgba(255,255,255,.08);
+      padding: 5px 12px; white-space: nowrap; cursor: pointer;
+      background: none; font-family: var(--sans); transition: all .2s;
+    }
+    .chip:hover { color: rgba(255,255,255,.68); border-color: rgba(255,255,255,.18); }
+    .chip.active {
+      color: rgba(255,255,255,.88);
+      border-color: rgba(255,255,255,.26);
+      background: rgba(255,255,255,.04);
+    }
+
+    /* ══════════════════════════════════════
+       BROWSE
+    ══════════════════════════════════════ */
+    .browse { position: relative; z-index: 1; padding-bottom: 100px; }
+
+    .cat-section { padding: 36px 0 0; }
+    .cat-header {
+      display: flex; align-items: baseline; justify-content: space-between;
+      padding: 0 28px; margin-bottom: 14px;
+    }
+    .cat-label {
+      font-size: 9.5px; font-weight: 400; letter-spacing: .20em;
+      text-transform: uppercase; color: rgba(255,255,255,.46);
+    }
+    .cat-count {
+      font-size: 7.5px; color: rgba(255,255,255,.18);
+      margin-left: 8px; letter-spacing: .10em;
+    }
+    .cat-see-all {
+      font-size: 7.5px; letter-spacing: .16em; text-transform: uppercase;
+      color: rgba(255,255,255,.22); text-decoration: none; transition: color .2s;
+    }
+    .cat-see-all:hover { color: rgba(255,255,255,.58); }
+
+    .card-row {
+      display: flex; gap: 8px; padding: 4px 28px 18px;
+      overflow-x: auto; overflow-y: visible;
+      scroll-behavior: smooth; scrollbar-width: none; cursor: grab;
+    }
+    .card-row::-webkit-scrollbar { display: none; }
+    .card-row:active { cursor: grabbing; }
+
+    /* ── Film Card ── */
+    .film-card {
+      flex-shrink: 0; width: 150px; height: 224px;
+      position: relative; overflow: hidden;
+      text-decoration: none; display: block;
+      transition: transform .30s cubic-bezier(.22,1,.36,1), box-shadow .30s;
+    }
+    .film-card:hover { transform: scale(1.07) translateY(-5px); box-shadow: 0 18px 44px rgba(0,0,0,.72); z-index: 10; }
+
+    .fc-bg { position: absolute; inset: 0; background-size: 220% 220%; animation: fcDrift 16s ease-in-out infinite; }
+    @keyframes fcDrift { 0%,100%{background-position:12% 12%} 50%{background-position:88% 88%} }
+    .fc-poster {
+      position: absolute; inset: 0;
+      background-size: cover; background-position: center top;
+      filter: brightness(0.52) saturate(0.60);
+    }
+    .fc-grain {
+      position: absolute; inset: 0; opacity: .044; pointer-events: none;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+      background-size: 160px 160px;
+    }
+    .fc-overlay { position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,.97) 0%, rgba(0,0,0,.56) 48%, rgba(0,0,0,.12) 78%, rgba(0,0,0,.04) 100%); }
+    .fc-top { position: absolute; top: 8px; left: 8px; right: 8px; display: flex; justify-content: space-between; }
+    .fc-badge { font-size: 5.5px; letter-spacing: .14em; text-transform: uppercase; color: rgba(255,255,255,.36); }
+    .fc-stage { font-size: 5.5px; letter-spacing: .10em; text-transform: uppercase; opacity: .28; }
+    .fc-bottom { position: absolute; bottom: 0; left: 0; right: 0; padding: 9px 9px 11px; }
+    .fc-trigger {
+      font-size: 9.5px; font-weight: 300;
+      color: rgba(255,255,255,.78); line-height: 1.46; margin-bottom: 5px;
+      display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden;
+    }
+    .fc-meta { font-size: 6.5px; letter-spacing: .10em; text-transform: uppercase; color: rgba(255,255,255,.26); }
+    .fc-hover {
+      position: absolute; inset: 0; opacity: 0; transition: opacity .22s;
+      display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,.30);
+    }
+    .film-card:hover .fc-hover { opacity: 1; }
+    .fc-play {
+      font-size: 7px; letter-spacing: .20em; text-transform: uppercase;
+      color: rgba(255,255,255,.88); border: 1px solid rgba(255,255,255,.34);
+      padding: 7px 14px; background: rgba(0,0,0,.52);
+    }
+
+    /* Partner promo */
+    .promo {
+      margin: 8px 28px 0;
+      border: 1px solid rgba(138,120,168,0.14);
+      background: rgba(138,120,168,0.03);
+      padding: 20px 24px;
+      display: flex; align-items: center; gap: 20px;
+    }
+    .promo-icon { font-size: 16px; opacity: .42; flex-shrink: 0; }
+    .promo-body { flex: 1; }
+    .promo-title {
+      font-size: 8px; letter-spacing: .20em; text-transform: uppercase;
+      color: rgba(255,255,255,.38); margin-bottom: 5px;
+    }
+    .promo-text { font-size: 11px; font-weight: 300; color: rgba(255,255,255,.38); line-height: 1.56; }
+    .promo-btn {
+      font-size: 7.5px; letter-spacing: .18em; text-transform: uppercase;
+      color: var(--psych); border: 1px solid rgba(138,120,168,0.22);
+      padding: 8px 16px; text-decoration: none; white-space: nowrap;
+      transition: all .22s; font-family: var(--sans);
+    }
+    .promo-btn:hover { background: rgba(138,120,168,.07); }
+
+    /* ══════════════════════════════════════
+       SEARCH OVERLAY
+    ══════════════════════════════════════ */
+    .search-overlay {
+      position: fixed; inset: 0; z-index: 400;
+      background: rgba(6,6,9,.96); backdrop-filter: blur(28px) saturate(0%);
+      display: none; flex-direction: column; align-items: center; padding-top: 110px;
+      opacity: 0; transition: opacity .24s;
+    }
+    .search-overlay.open    { display: flex; }
+    .search-overlay.visible { opacity: 1; }
+    .s-inner { width: 100%; max-width: 520px; padding: 0 28px; }
+    .s-bar {
+      display: flex; align-items: center;
+      border-bottom: 1px solid rgba(255,255,255,.16);
+      gap: 12px; margin-bottom: 28px;
+    }
+    .s-input {
+      flex: 1; font-family: var(--sans); font-size: 20px; font-weight: 300;
+      color: rgba(255,255,255,.80); background: transparent; border: none;
+      outline: none; padding: 10px 0;
+    }
+    .s-input::placeholder { color: rgba(255,255,255,.18); }
+    .s-close {
+      font-size: 8px; letter-spacing: .18em; text-transform: uppercase;
+      color: rgba(255,255,255,.26); background: none; border: none;
+      cursor: pointer; padding: 8px; font-family: var(--sans); transition: color .2s;
+    }
+    .s-close:hover { color: rgba(255,255,255,.65); }
+    .s-results { display: flex; flex-direction: column; gap: 7px; }
+    .s-result {
+      display: flex; gap: 14px; align-items: center;
+      padding: 12px 16px; border: 1px solid rgba(255,255,255,.06);
+      text-decoration: none; transition: all .2s;
+    }
+    .s-result:hover { border-color: rgba(255,255,255,.13); background: rgba(255,255,255,.02); }
+    .s-swatch { width: 32px; height: 48px; flex-shrink: 0; }
+    .s-trigger { font-size: 12px; font-weight: 300; color: rgba(255,255,255,.70); line-height: 1.42; }
+    .s-cat { font-size: 7px; letter-spacing: .14em; text-transform: uppercase; color: var(--psych); opacity: .58; margin-top: 3px; }
+    .s-hint { font-size: 11px; color: rgba(255,255,255,.22); padding: 12px 0; }
+  </style>
+</head>
+<body>
+  <div class="grid-bg"></div>
+
+  <!-- ══════════ NAV ══════════ -->
+  <nav>
+    <a class="nav-logo" href="home.html">Brodonam</a>
+    <div class="nav-links">
+      <a class="nav-link active" href="home.html">Discover</a>
+      <a class="nav-link" href="library.html">Journey</a>
+      <a class="nav-link" href="couples.html">Partner</a>
+    </div>
+    <div class="nav-right">
+      <span class="nav-mood" id="navMood"></span>
+      <button class="nav-search" onclick="openSearch()" title="Search">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+        </svg>
+      </button>
+      <a class="nav-checkin" href="index.html">Check in ◆</a>
+    </div>
+  </nav>
+
+  <!-- ══════════ HERO ══════════ -->
+  <div class="hero">
+    <div class="hero-bg" id="heroBg"></div>
+    <div class="hero-grain"></div>
+    <div class="hero-vignette"></div>
+    <div class="hero-content">
+      <div class="hero-eyebrow" id="heroEyebrow">◆ Brodonam recommends · Tonight</div>
+      <div class="hero-trigger" id="heroTrigger">Fear of losing someone before you were ready</div>
+      <p   class="hero-synopsis" id="heroSynopsis">A film that holds grief as a physical, present thing — not a past event.</p>
+      <div class="hero-tags">
+        <span class="hero-tag" id="heroTag1">Grief</span>
+        <span class="hero-tag" id="heroTag2">Attachment</span>
+        <span class="hero-dur" id="heroDur">2 hr 8 min</span>
+      </div>
+      <div class="hero-btns">
+        <a class="hero-play" id="heroPlay" href="player.html?id=eternal-sunshine">Begin watching →</a>
+        <a class="hero-info" id="heroInfo" href="player.html?id=eternal-sunshine">About this film</a>
+      </div>
+    </div>
+    <div class="hero-companion">
+      <span class="hc-dot"></span>
+      <p class="hc-text" id="hcText">Based on what you shared, I've chosen films that speak directly to what you're carrying.</p>
+      <a class="hc-link" href="index.html">Retake check-in →</a>
+    </div>
+  </div>
+
+  <!-- ══════════ FILTER ══════════ -->
+  <div class="filter-strip">
+    <span class="filter-label">Browse by</span>
+    <div class="chips" id="filterChips">
+      <button class="chip active" onclick="showAll(this)">All</button>
+      <button class="chip" onclick="filterCat('grief',this)">Grief &amp; Loss</button>
+      <button class="chip" onclick="filterCat('relationship',this)">Love &amp; Relationships</button>
+      <button class="chip" onclick="filterCat('anxiety',this)">Anxiety</button>
+      <button class="chip" onclick="filterCat('identity',this)">Identity</button>
+      <button class="chip" onclick="filterCat('family',this)">Family</button>
+      <button class="chip" onclick="filterCat('self-worth',this)">Self-Worth</button>
+      <button class="chip" onclick="filterCat('loneliness',this)">Loneliness</button>
+      <button class="chip" onclick="filterCat('resilience',this)">Resilience</button>
+      <button class="chip" onclick="filterCat('attachment',this)">Attachment</button>
+      <button class="chip" onclick="filterCat('healing',this)">Healing</button>
+    </div>
+  </div>
+
+  <!-- ══════════ BROWSE ══════════ -->
+  <div class="browse">
+    <div id="rowsContainer"></div>
+    <div class="promo" style="margin-top:14px">
+      <div class="promo-icon">✦</div>
+      <div class="promo-body">
+        <div class="promo-title">Partner Session</div>
+        <p class="promo-text">Some things are easier to feel side by side. Let the film say what you haven't been able to.</p>
+      </div>
+      <a class="promo-btn" href="couples.html">Set up →</a>
+    </div>
+  </div>
+
+  <!-- ══════════ SEARCH ══════════ -->
+  <div class="search-overlay" id="searchOverlay">
+    <div class="s-inner">
+      <div class="s-bar">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.26)" stroke-width="1.5">
+          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+        </svg>
+        <input class="s-input" id="sInput" placeholder="What are you going through?" oninput="doSearch(this.value)">
+        <button class="s-close" onclick="closeSearch()">Close ✕</button>
+      </div>
+      <div class="s-results" id="sResults">
+        <div class="s-hint">Try "grief", "anxiety", "love", "lost"…</div>
+      </div>
+    </div>
+  </div>
+
+  <script src="data/movies.js"></script>
+  <script>
+  /* ═══════════════════════════════════════
+     CATEGORY CONFIG
+  ═══════════════════════════════════════ */
+  const CC = {
+    grief:        { label:'Grief & Loss',         color:'#8878A8' },
+    relationship: { label:'Love & Relationships', color:'#A87878' },
+    anxiety:      { label:'Anxiety & Mind',       color:'#60A898' },
+    identity:     { label:'Identity & Becoming',  color:'#7888B8' },
+    family:       { label:'Family Wounds',        color:'#B08858' },
+    'self-worth': { label:'Self-Worth',           color:'#80A868' },
+    loneliness:   { label:'Loneliness',           color:'#6878A8' },
+    resilience:   { label:'Resilience',           color:'#B08068' },
+    attachment:   { label:'Attachment & Trust',   color:'#9878B8' },
+    healing:      { label:'Healing & Peace',      color:'#70A880' },
+  };
+  const CAT_ORDER = ['grief','relationship','anxiety','identity','family','self-worth','loneliness','resilience','attachment','healing'];
+  const CAT_MAP   = {
+    grief:'grief', anxiety:'anxiety', relationship:'relationship',
+    disconnection:'loneliness', identity:'identity', family:'family',
+    'self-worth':'self-worth', numbness:'healing',
+    loneliness:'loneliness', resilience:'resilience',
+    attachment:'attachment', healing:'healing'
+  };
+
+  /* ═══════════════════════════════════════
+     CARDS + ROWS
+  ═══════════════════════════════════════ */
+  function makeCard(m) {
+    const a = document.createElement('a');
+    a.className = 'film-card'; a.href = `player.html?id=${m.id}`; a.title = m.trigger;
+    const cat = m.categories[0];
+    const c = CC[cat]||{}; const col = c.color||'rgba(255,255,255,.3)';
+    a.innerHTML = `
+      <div class="fc-bg" style="background:${m.gradient}"></div>
+      ${m.poster ? `<div class="fc-poster" style="background-image:url('${m.poster}')"></div>` : ''}
+      <div class="fc-grain"></div><div class="fc-overlay"></div>
+      <div class="fc-top">
+        <span class="fc-badge" style="color:${col}">${c.label||cat}</span>
+        <span class="fc-stage" style="color:${col}">${m.healingStage||''}</span>
+      </div>
+      <div class="fc-bottom">
+        <div class="fc-trigger">${m.trigger}</div>
+        <div class="fc-meta">${m.duration||''}</div>
+      </div>
+      <div class="fc-hover"><span class="fc-play">Begin →</span></div>`;
+    return a;
+  }
+
+  function makeRow(key, films) {
+    const c = CC[key]||{label:key}; const col = c.color||'rgba(255,255,255,.44)';
+    const sec = document.createElement('div');
+    sec.className = 'cat-section'; sec.dataset.cat = key;
+    sec.innerHTML = `
+      <div class="cat-header">
+        <span class="cat-label" style="color:${col}">${c.label||key}
+          <span class="cat-count">${films.length} films</span>
+        </span>
+        <a class="cat-see-all" href="#" onclick="filterCatKey('${key}');return false;">See all →</a>
+      </div>
+      <div class="card-row" id="row-${key}"></div>`;
+    const row = sec.querySelector('.card-row');
+    films.forEach(m => row.appendChild(makeCard(m)));
+    let dn=false,sx,sl;
+    row.addEventListener('mousedown',e=>{dn=true;sx=e.pageX-row.offsetLeft;sl=row.scrollLeft;});
+    row.addEventListener('mouseleave',()=>dn=false);
+    row.addEventListener('mouseup',()=>dn=false);
+    row.addEventListener('mousemove',e=>{if(!dn)return;e.preventDefault();const x=e.pageX-row.offsetLeft;row.scrollLeft=sl-(x-sx)*1.5;});
+    return sec;
+  }
+
+  /* ═══════════════════════════════════════
+     HERO
+  ═══════════════════════════════════════ */
+  function setHero(m) {
+    if (!m) return;
+    document.getElementById('heroBg').style.background = m.gradient;
+    document.getElementById('heroTrigger').textContent = m.trigger;
+    document.getElementById('heroSynopsis').textContent = m.synopsis || '';
+    const cats = m.categories||[];
+    const c1=CC[cats[0]]||{}, c2=CC[cats[1]]||{};
+    const t1=document.getElementById('heroTag1'), t2=document.getElementById('heroTag2');
+    t1.textContent = c1.label||cats[0]||'';
+    if (cats[1]) { t2.textContent=c2.label||cats[1]; t2.style.display=''; }
+    else t2.style.display='none';
+    document.getElementById('heroDur').textContent = m.duration||'';
+    document.getElementById('heroPlay').href = `player.html?id=${m.id}`;
+    document.getElementById('heroInfo').href = `player.html?id=${m.id}`;
+  }
+
+  /* ═══════════════════════════════════════
+     BUILD ROWS
+  ═══════════════════════════════════════ */
+  const container = document.getElementById('rowsContainer');
+
+  function buildRows(order) {
+    container.innerHTML = '';
+    (order||CAT_ORDER).forEach(cat => {
+      const films = BRODONAM_MOVIES.filter(m => m.categories.includes(cat));
+      if (films.length) container.appendChild(makeRow(cat, films));
+    });
+  }
+  buildRows();
+  setHero(BRODONAM_MOVIES[0]);
+
+  /* ═══════════════════════════════════════
+     PROFILE — personalise from check-in
+  ═══════════════════════════════════════ */
+  const COMPANION_MSGS = {
+    grief:        'You mentioned grief with nowhere to go. I\'ve put those films first.',
+    anxiety:      'I hear the anxiety you\'re carrying. These films mirror that restless mind.',
+    relationship: 'Relationships are the hardest pain to talk about. The right film says what words can\'t yet.',
+    identity:     'The question of who you\'re becoming is one the right story helps answer.',
+    family:       'Family wounds run deep. These films look at that pain with compassion.',
+    'self-worth': 'The belief you\'re not enough is the heaviest thing to carry alone.',
+    loneliness:   'Loneliness isn\'t always visible. These films see you.',
+    resilience:   'You\'ve survived more than you give yourself credit for.',
+    attachment:   'Trust that broke doesn\'t have to stay broken.',
+    healing:      'Healing isn\'t linear — but you\'re already in it.',
+    disconnection:'Feeling unseen is one of the loneliest places.',
+    numbness:     'Sometimes we feel everything and nothing at once.',
+  };
+
+  try {
+    const raw = localStorage.getItem('brodonam_profile');
+    if (raw) {
+      const p = JSON.parse(raw);
+      const em   = p.emotion || 'grief';
+      const pcat = CAT_MAP[em] || 'grief';
+
+      // Nav mood
+      const moodEl = document.getElementById('navMood');
+      if (moodEl) { moodEl.textContent = 'Carrying: ' + (CC[pcat]||{label:pcat}).label; moodEl.style.display=''; }
+
+      // Hero
+      const top = BRODONAM_MOVIES.find(m=>m.categories[0]===pcat) || BRODONAM_MOVIES[0];
+      setHero(top);
+
+      // Companion text
+      const hcEl = document.getElementById('hcText');
+      if (hcEl) hcEl.textContent = COMPANION_MSGS[em] || COMPANION_MSGS[pcat] || COMPANION_MSGS.grief;
+
+      // Reorder rows — their category first
+      buildRows([pcat, ...CAT_ORDER.filter(c=>c!==pcat)]);
+    }
+  } catch(e) {}
+
+  /* ═══════════════════════════════════════
+     FILTER
+  ═══════════════════════════════════════ */
+  function setChip(btn) {
+    document.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
+    if(btn) btn.classList.add('active');
+  }
+  function filterCat(cat,btn) {
+    setChip(btn); container.innerHTML='';
+    const films=BRODONAM_MOVIES.filter(m=>m.categories.includes(cat));
+    if(films.length){container.appendChild(makeRow(cat,films));setHero(films[0]);}
+    else container.innerHTML='<div style="padding:60px 28px;font-size:13px;color:rgba(255,255,255,.22)">No films yet in this space.</div>';
+    container.scrollIntoView({behavior:'smooth',block:'start'});
+  }
+  function filterCatKey(cat){
+    const btn=[...document.querySelectorAll('.chip')].find(b=>b.onclick&&b.onclick.toString().includes(`'${cat}'`));
+    filterCat(cat,btn);
+  }
+  function showAll(btn){ setChip(btn); buildRows(); setHero(BRODONAM_MOVIES[0]); }
+
+  /* ═══════════════════════════════════════
+     SEARCH
+  ═══════════════════════════════════════ */
+  function openSearch() {
+    const ov=document.getElementById('searchOverlay');
+    ov.classList.add('open');
+    requestAnimationFrame(()=>{ov.classList.add('visible');document.getElementById('sInput').focus();});
+  }
+  function closeSearch() {
+    const ov=document.getElementById('searchOverlay');
+    ov.classList.remove('visible');
+    setTimeout(()=>ov.classList.remove('open'),240);
+  }
+  function doSearch(q) {
+    const res=document.getElementById('sResults');
+    const low=q.trim().toLowerCase();
+    if(!low){res.innerHTML='<div class="s-hint">Try "grief", "anxiety", "love", "lost"…</div>';return;}
+    const hits=BRODONAM_MOVIES.filter(m=>
+      m.trigger.toLowerCase().includes(low)||
+      (m.synopsis||'').toLowerCase().includes(low)||
+      m.categories.some(c=>c.includes(low))
+    ).slice(0,8);
+    res.innerHTML='';
+    if(!hits.length){res.innerHTML='<div class="s-hint">No films found. Try a feeling…</div>';return;}
+    hits.forEach(m=>{
+      const a=document.createElement('a');
+      a.className='s-result';a.href=`player.html?id=${m.id}`;
+      const c=CC[m.categories[0]]||{};
+      a.innerHTML=`
+        <div class="s-swatch" style="background:${m.gradient}"></div>
+        <div><div class="s-trigger">${m.trigger}</div>
+        <div class="s-cat">${c.label||m.categories[0]}</div></div>`;
+      res.appendChild(a);
+    });
+  }
+  document.addEventListener('keydown',e=>{if(e.key==='Escape')closeSearch();});
+  </script>
+</body>
+</html>

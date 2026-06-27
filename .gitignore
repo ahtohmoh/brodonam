@@ -1,0 +1,15 @@
+.env
+node_modules/
+
+# SQLite database + WAL/shm artefacts
+data/*.db
+data/*.db-journal
+data/*.db-wal
+data/*.db-shm
+
+# Build artefacts
+dist/
+
+# OS / editor cruft
+.DS_Store
+Thumbs.db
