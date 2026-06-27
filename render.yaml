@@ -10,7 +10,7 @@
 
 databases:
   - name: brodonam-db
-    plan: free            # free tier expires ~90 days; upgrade to `basic-256mb` for permanence
+    plan: basic-256mb     # paid entry tier — durable, no free-tier 90-day expiry, no "one free DB" limit
     databaseName: brodonam
     user: brodonam
 
