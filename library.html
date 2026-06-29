@@ -11,12 +11,12 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg:        #060609;
-      --border:    rgba(255,255,255,0.07);
+      --bg: #0c0b11;
+      --border: rgba(255,255,255,0.11);
       --border-h:  rgba(255,255,255,0.18);
-      --text:      rgba(255,255,255,0.84);
-      --text-dim:  rgba(255,255,255,0.48);
-      --text-mute: rgba(255,255,255,0.26);
+      --text: rgba(255,255,255,0.90);
+      --text-dim: rgba(255,255,255,0.66);
+      --text-mute: rgba(255,255,255,0.52);
       --accent:    #C09060;
       --accent-bg: rgba(192,144,96,0.10);
       --psych:     #8A78A8;
@@ -48,12 +48,12 @@
       background: rgba(6,6,9,0.96); border-bottom: 1px solid var(--border);
       display: flex; align-items: center; padding: 0 28px; gap: 20px;
     }
-    .nav-logo { font-size: 10px; font-weight: 400; letter-spacing: 0.28em; text-transform: uppercase; color: rgba(255,255,255,0.24); text-decoration: none; }
+    .nav-logo { font-size: 10px; font-weight: 400; letter-spacing: 0.28em; text-transform: uppercase; color: rgba(255,255,255,0.58); text-decoration: none; }
     .nav-links { display: flex; gap: 22px; margin-left: 24px; }
-    .nav-link { font-size: 9px; font-weight: 400; letter-spacing: 0.16em; text-transform: uppercase; color: rgba(255,255,255,0.3); text-decoration: none; transition: color 0.2s; }
+    .nav-link { font-size: 9px; font-weight: 400; letter-spacing: 0.16em; text-transform: uppercase; color: rgba(255,255,255,0.58); text-decoration: none; transition: color 0.2s; }
     .nav-link:hover, .nav-link.active { color: rgba(255,255,255,0.68); }
     .nav-right { margin-left: auto; display: flex; gap: 20px; align-items: center; }
-    .nav-avatar { width: 28px; height: 28px; border: 1px solid var(--border-h); display: flex; align-items: center; justify-content: center; font-size: 10px; color: rgba(255,255,255,0.45); }
+    .nav-avatar { width: 28px; height: 28px; border: 1px solid var(--border-h); display: flex; align-items: center; justify-content: center; font-size: 10px; color: rgba(255,255,255,0.71); }
 
     /* ─── Main ─── */
     main {
@@ -74,7 +74,7 @@
     }
     .page-sub {
       font-size: 13px; font-weight: 300;
-      color: rgba(255,255,255,0.42); line-height: 1.65; margin-bottom: 36px;
+      color: rgba(255,255,255,0.68); line-height: 1.65; margin-bottom: 36px;
     }
 
     /* ─── Stats row ─── */
@@ -91,7 +91,7 @@
     }
     .stat-label {
       font-size: 8px; font-weight: 400; letter-spacing: 0.16em;
-      text-transform: uppercase; color: rgba(255,255,255,0.3);
+      text-transform: uppercase; color: rgba(255,255,255,0.58);
     }
 
     /* ─── Emotional arc ─── */
@@ -125,11 +125,11 @@
     .arc-dates {
       display: flex; justify-content: space-between;
       font-size: 8px; font-weight: 400; letter-spacing: 0.12em;
-      color: rgba(255,255,255,0.22);
+      color: rgba(255,255,255,0.58);
     }
     .arc-note {
       font-size: 12px; font-weight: 300;
-      color: rgba(255,255,255,0.5); line-height: 1.6; margin-top: 18px;
+      color: rgba(255,255,255,0.76); line-height: 1.6; margin-top: 18px;
     }
 
     /* ─── Tabs ─── */
@@ -137,7 +137,7 @@
     .lib-tab {
       font-family: var(--sans); font-size: 9px; font-weight: 400;
       letter-spacing: 0.16em; text-transform: uppercase;
-      color: rgba(255,255,255,0.3); background: none; border: none;
+      color: rgba(255,255,255,0.58); background: none; border: none;
       padding: 12px 20px; cursor: pointer;
       border-bottom: 1px solid transparent; margin-bottom: -1px;
       transition: all 0.2s;
@@ -168,7 +168,7 @@
     }
     .timeline-date {
       font-size: 8px; font-weight: 400; letter-spacing: 0.1em;
-      color: rgba(255,255,255,0.24); text-align: center; line-height: 1.4;
+      color: rgba(255,255,255,0.58); text-align: center; line-height: 1.4;
     }
     .timeline-card {
       flex: 1; border: 1px solid var(--border);
@@ -188,7 +188,7 @@
     }
     .timeline-meta-dot { width: 2px; height: 2px; background: var(--text-mute); border-radius: 50%; }
     .timeline-insights {
-      font-size: 11px; font-weight: 300; color: rgba(255,255,255,0.42);
+      font-size: 11px; font-weight: 300; color: rgba(255,255,255,0.68);
       line-height: 1.55; border-left: 2px solid rgba(138,120,168,0.25); padding-left: 12px;
     }
     .timeline-actions-done {
@@ -231,12 +231,12 @@
     .action-row.done .action-check { border-color: var(--accent); color: var(--accent); }
     .action-from { font-size: 8px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-mute); margin-bottom: 4px; }
     .action-body { font-size: 12px; font-weight: 300; color: var(--text-dim); line-height: 1.5; }
-    .action-row.done .action-body { color: rgba(255,255,255,0.3); }
+    .action-row.done .action-body { color: rgba(255,255,255,0.58); }
 
     /* ─── Progress bar ─── */
     .progress-block { border: 1px solid var(--border); padding: 18px 20px; margin-bottom: 24px; }
     .progress-header { display: flex; justify-content: space-between; margin-bottom: 12px; }
-    .progress-title { font-size: 10px; font-weight: 400; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(255,255,255,0.38); }
+    .progress-title { font-size: 10px; font-weight: 400; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(255,255,255,0.64); }
     .progress-pct { font-size: 10px; font-weight: 400; letter-spacing: 0.1em; color: var(--accent); }
     .progress-track { height: 2px; background: rgba(255,255,255,0.08); }
     .progress-fill { height: 100%; background: var(--accent); }

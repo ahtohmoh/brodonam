@@ -45,7 +45,12 @@ let underlying;  // raw handle for /api/health stats etc.
 
 if (USE_PG) {
   const { Pool } = require('pg');
-  const pool = new Pool({ connectionString: process.env.DATABASE_URL, max: 10 });
+  const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    max: parseInt(process.env.PGPOOL_MAX || '12', 10),
+    idleTimeoutMillis: 30_000,
+    connectionTimeoutMillis: 8_000,
+  });
   underlying = pool;
   driver = {
     async query(sql, params = []) { return pool.query(sql, params); },

@@ -30,6 +30,7 @@ const path         = require('path');
 const Anthropic    = require('@anthropic-ai/sdk');
 const DB           = require('./db');
 const log          = require('./logger');
+const store        = require('./store');
 const { sendMagicLink } = require('./mail');
 const followUps    = require('./followups');
 
@@ -77,7 +78,10 @@ if (COOKIE_SECRET === 'brodonam-dev-secret-change-me') {
 /* ═══════════════════════════════════════════════════════
    MODELS  (env-overridable so we can swap families later)
 ═══════════════════════════════════════════════════════ */
-const MODEL_MAIN       = process.env.CLAUDE_MODEL_MAIN       || 'claude-opus-4-5';
+// Hot path defaults to Sonnet 4.6 — far higher rate limits and ~5× cheaper than
+// Opus, with quality more than adequate for the companion. Override with
+// CLAUDE_MODEL_MAIN=claude-opus-4-8 for a premium/"deep" tier if you want.
+const MODEL_MAIN       = process.env.CLAUDE_MODEL_MAIN       || 'claude-sonnet-4-6';
 const MODEL_CLASSIFIER = process.env.CLAUDE_MODEL_CLASSIFIER || 'claude-haiku-4-5';
 
 /* ═══════════════════════════════════════════════════════
@@ -86,29 +90,24 @@ const MODEL_CLASSIFIER = process.env.CLAUDE_MODEL_CLASSIFIER || 'claude-haiku-4-
 const DAILY_SPEND_CAP_USD = parseFloat(process.env.DAILY_SPEND_CAP_USD || '10');
 const PRICING = {
   // approximate $/M tokens — adjust to your actual contract
+  'claude-opus-4-8':   { in: 15.0, out: 75.0, cwrite: 18.75, cread: 1.50 },
   'claude-opus-4-5':   { in: 15.0, out: 75.0, cwrite: 18.75, cread: 1.50 },
+  'claude-sonnet-4-6': { in:  3.0, out: 15.0, cwrite:  3.75, cread: 0.30 },
   'claude-sonnet-4-5': { in:  3.0, out: 15.0, cwrite:  3.75, cread: 0.30 },
   'claude-haiku-4-5':  { in:  0.8, out:  4.0, cwrite:  1.00, cread: 0.08 },
 };
-let dailySpend = { date: today(), usd: 0, requests: 0 };
-function today() { return new Date().toISOString().slice(0, 10); }
-function rollSpend() {
-  const t = today();
-  if (dailySpend.date !== t) dailySpend = { date: t, usd: 0, requests: 0 };
-}
+// Spend tracking is delegated to ./store (Redis-shared when REDIS_URL is set,
+// in-memory otherwise) so the daily cap is correct across multiple instances.
 function trackSpend(usage, model) {
   if (!usage) return;
-  rollSpend();
-  const p = PRICING[model] || PRICING['claude-sonnet-4-5'];
+  const p = PRICING[model] || PRICING['claude-sonnet-4-6'];
   const cost =
     ((usage.input_tokens                || 0) * p.in     +
      (usage.output_tokens               || 0) * p.out    +
      (usage.cache_creation_input_tokens || 0) * p.cwrite +
      (usage.cache_read_input_tokens     || 0) * p.cread) / 1_000_000;
-  dailySpend.usd += cost;
-  dailySpend.requests += 1;
+  store.addSpend(cost).catch(() => { /* best-effort accounting */ });
 }
-function spendCapReached() { rollSpend(); return dailySpend.usd >= DAILY_SPEND_CAP_USD; }
 
 /* ═══════════════════════════════════════════════════════
    FRAMEWORKS + MOVIES
@@ -437,12 +436,15 @@ function requireUser(req, res, next) {
 app.use(attachUser);
 app.use(express.static(path.join(__dirname)));
 
-// Rate limiters scoped to chat — burst and hourly
+// Rate limiters scoped to chat — burst and hourly.
+// store: makeRateLimitStore(...) returns a Redis store when REDIS_URL is set
+// (shared across instances) or undefined → express-rate-limit's memory store.
 const chatBurstLimit = rateLimit({
   windowMs: 60 * 1000,
   max: 12,
   standardHeaders: true,
   legacyHeaders: false,
+  store: store.makeRateLimitStore('chat-burst'),
   message: { error: 'Slow down — give yourself a moment between messages.' },
 });
 const chatHourlyLimit = rateLimit({
@@ -450,8 +452,8 @@ const chatHourlyLimit = rateLimit({
   max: 120,
   standardHeaders: true,
   legacyHeaders: false,
+  store: store.makeRateLimitStore('chat-hourly'),
   message: { error: "You've been sending a lot of messages. Take a breath — come back in a bit." },
-  // Authed users are tracked per-user-id so they aren't penalised by shared NAT.
   // Authed users keyed by id; anonymous keyed by IPv6-safe IP.
   keyGenerator: (req) => req.user?.id || ipKeyGenerator(req.ip),
 });
@@ -462,6 +464,7 @@ const authRequestLimit = rateLimit({
   max: 6,
   standardHeaders: true,
   legacyHeaders: false,
+  store: store.makeRateLimitStore('auth'),
   message: { error: 'Too many sign-in requests. Try again in a few minutes.' },
 });
 
@@ -601,7 +604,7 @@ app.post('/api/chat', chatBurstLimit, chatHourlyLimit, async (req, res) => {
   }
 
   // Spend cap
-  if (spendCapReached()) {
+  if (await store.spendCapReached(DAILY_SPEND_CAP_USD)) {
     return res.status(503).json({
       error: "We've reached today's safety ceiling on AI usage. Please come back tomorrow — your conversation is preserved on your device.",
     });
@@ -699,7 +702,6 @@ app.post('/api/chat', chatBurstLimit, chatHourlyLimit, async (req, res) => {
     }
     sse(res, 'done', {
       usage: final.usage,
-      spend: { today: dailySpend.usd.toFixed(4), cap: DAILY_SPEND_CAP_USD },
       conversationId: conversation?.id,
     });
     res.end();
@@ -760,7 +762,7 @@ const NORMALISED_FILM_TITLES = MOVIES.map(m => ({
   norm: normaliseTitle(m.title || m.trigger),
 }));
 
-const extLimit = rateLimit({ windowMs: 60_000, max: 30, standardHeaders: true, legacyHeaders: false });
+const extLimit = rateLimit({ windowMs: 60_000, max: 30, standardHeaders: true, legacyHeaders: false, store: store.makeRateLimitStore('ext') });
 
 app.post('/api/extension/identify', extLimit, (req, res) => {
   const { title, source } = req.body || {};
@@ -790,7 +792,7 @@ const OPENAI_API_KEY     = process.env.OPENAI_API_KEY;
 const ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY;
 const ELEVENLABS_VOICE   = process.env.ELEVENLABS_VOICE_ID || 'EXAVITQu4vr4xnSDxMaL'; // calm female default
 
-const voiceLimit = rateLimit({ windowMs: 60_000, max: 20, standardHeaders: true, legacyHeaders: false });
+const voiceLimit = rateLimit({ windowMs: 60_000, max: 20, standardHeaders: true, legacyHeaders: false, store: store.makeRateLimitStore('voice') });
 
 // POST /api/voice/transcribe — raw audio body, returns { text }
 app.post('/api/voice/transcribe', voiceLimit, express.raw({ type: '*/*', limit: '5mb' }), async (req, res) => {
@@ -969,7 +971,7 @@ app.get('/api/film/:id/watch-link', (req, res) => {
    dataset you'll fine-tune on later.
 ═══════════════════════════════════════════════════════ */
 
-const feedbackLimit = rateLimit({ windowMs: 60_000, max: 10, standardHeaders: true, legacyHeaders: false });
+const feedbackLimit = rateLimit({ windowMs: 60_000, max: 10, standardHeaders: true, legacyHeaders: false, store: store.makeRateLimitStore('feedback') });
 
 app.post('/api/feedback', feedbackLimit, (req, res) => {
   const { conversationId, score, note, filmId } = req.body || {};
@@ -988,7 +990,7 @@ app.post('/api/feedback', feedbackLimit, (req, res) => {
    GET /api/health
 ═══════════════════════════════════════════════════════ */
 app.get('/api/health', async (req, res) => {
-  rollSpend();
+  const spend = await store.getSpendToday();
   const { users, conversations } = await DB.stats();
   res.json({
     status:     'ok',
@@ -996,7 +998,8 @@ app.get('/api/health', async (req, res) => {
     key:        process.env.ANTHROPIC_API_KEY ? '✓ set' : '✗ missing',
     model:      MODEL_MAIN,
     classifier: MODEL_CLASSIFIER,
-    spend:      { ...dailySpend, cap: DAILY_SPEND_CAP_USD },
+    spend:      { ...spend, cap: DAILY_SPEND_CAP_USD },
+    store:      store.redisEnabled ? 'redis' : 'memory',
     users,
     conversations,
     crisis_unreviewed: await DB.unreviewedCrisisCount(),
@@ -1048,6 +1051,7 @@ function shutdown(signal) {
   }, 10_000).unref();
   const finish = async () => {
     try { await DB.driver().close(); } catch (e) { log.error({ err: e }, 'db.close errored'); }
+    try { await store.close(); } catch (e) { log.error({ err: e }, 'store.close errored'); }
     clearTimeout(force);
     log.info('Goodbye');
     process.exit(0);

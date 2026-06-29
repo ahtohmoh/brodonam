@@ -11,12 +11,12 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg:        #060609;
-      --border:    rgba(255,255,255,0.08);
+      --bg: #0c0b11;
+      --border: rgba(255,255,255,0.11);
       --border-h:  rgba(255,255,255,0.22);
-      --text:      rgba(255,255,255,0.84);
-      --text-dim:  rgba(255,255,255,0.48);
-      --text-mute: rgba(255,255,255,0.26);
+      --text: rgba(255,255,255,0.90);
+      --text-dim: rgba(255,255,255,0.66);
+      --text-mute: rgba(255,255,255,0.52);
       --accent:    #C09060;
       --accent-bg: rgba(192,144,96,0.12);
       --psych:     #8A78A8;
@@ -69,13 +69,13 @@
     .header-logo {
       font-size: 10px; font-weight: 400;
       letter-spacing: 0.28em; text-transform: uppercase;
-      color: rgba(255,255,255,0.24); pointer-events: all;
+      color: rgba(255,255,255,0.58); pointer-events: all;
       text-decoration: none;
     }
     .header-step {
       font-size: 10px; font-weight: 400;
       letter-spacing: 0.16em; text-transform: uppercase;
-      color: rgba(255,255,255,0.22);
+      color: rgba(255,255,255,0.58);
     }
 
     /* ─── Form Wrap ─── */
@@ -128,10 +128,10 @@
     }
     .choice-label { font-size: 14px; font-weight: 300; letter-spacing: 0.01em; }
     .choice-sub {
-      font-size: 11px; color: rgba(255,255,255,0.4); letter-spacing: 0.04em;
+      font-size: 11px; color: rgba(255,255,255,0.66); letter-spacing: 0.04em;
     }
     .choice-card:hover .choice-sub, .choice-card.selected .choice-sub {
-      color: rgba(255,255,255,0.55);
+      color: rgba(255,255,255,0.81);
     }
 
     /* Emotion grid */
@@ -164,7 +164,7 @@
     .field-label {
       display: block; font-size: 9px; font-weight: 400;
       letter-spacing: 0.18em; text-transform: uppercase;
-      color: rgba(255,255,255,0.42); margin-bottom: 10px;
+      color: rgba(255,255,255,0.68); margin-bottom: 10px;
     }
     .field-input, .field-textarea {
       width: 100%; font-family: var(--sans);
@@ -175,8 +175,8 @@
       transition: border-color 0.22s;
       -webkit-appearance: none; border-radius: 0;
     }
-    .field-input::placeholder, .field-textarea::placeholder { color: rgba(255,255,255,0.26); }
-    .field-input:focus, .field-textarea:focus { border-bottom-color: rgba(255,255,255,0.45); }
+    .field-input::placeholder, .field-textarea::placeholder { color: rgba(255,255,255,0.58); }
+    .field-input:focus, .field-textarea:focus { border-bottom-color: rgba(255,255,255,0.71); }
     .field-textarea { resize: none; height: 80px; line-height: 1.65; }
 
     /* Chips */
@@ -184,7 +184,7 @@
     .chip {
       font-family: var(--sans); font-size: 10px; font-weight: 400;
       letter-spacing: 0.12em; text-transform: uppercase;
-      color: rgba(255,255,255,0.52); background: transparent;
+      color: rgba(255,255,255,0.78); background: transparent;
       border: 1px solid rgba(255,255,255,0.09);
       padding: 7px 14px; cursor: pointer;
       transition: all 0.18s ease;
@@ -208,10 +208,10 @@
     .back-btn {
       font-family: var(--sans); font-size: 10px; font-weight: 400;
       letter-spacing: 0.18em; text-transform: uppercase;
-      color: rgba(255,255,255,0.28); background: none; border: none;
+      color: rgba(255,255,255,0.58); background: none; border: none;
       cursor: pointer; transition: color 0.22s;
     }
-    .back-btn:hover { color: rgba(255,255,255,0.58); }
+    .back-btn:hover { color: rgba(255,255,255,0.84); }
 
     .next-btn {
       font-family: var(--sans); font-size: 10px; font-weight: 400;
