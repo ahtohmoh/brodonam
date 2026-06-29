@@ -704,20 +704,21 @@ document.title = `Brodonam — ${MOVIE.trigger}`;
     </div>`;
   document.body.appendChild(overlay);
 
-  // Pause any auto-progression while gated
+  // Mark gated. NB: don't reference `isPlaying` here — it's a `let` declared
+  // later in this script, so touching it now hits the temporal dead zone and
+  // throws, which previously aborted the handler wiring below (dead buttons).
+  // The overlay covers the screen anyway, so the sim doesn't need pausing.
   window.__brodonamGated = true;
-  if (typeof isPlaying !== 'undefined') isPlaying = false;
 
   document.getElementById('cgBack').onclick = () => {
     window.location.href = 'index.html';
   };
   document.getElementById('cgReady').onclick = () => {
-    localStorage.setItem(ackKey, String(Date.now()));
+    try { localStorage.setItem(ackKey, String(Date.now())); } catch (e) {}
     overlay.classList.add('cg-out');
     setTimeout(() => {
       overlay.remove();
       window.__brodonamGated = false;
-      if (typeof isPlaying !== 'undefined') isPlaying = true;
     }, 400);
   };
 })();
