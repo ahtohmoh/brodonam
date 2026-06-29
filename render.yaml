@@ -29,7 +29,8 @@ services:
     # (so the rate limiter + spend cap are shared). Without Redis, pin to 1.
     scaling:
       minInstances: 1
-      maxInstances: 3
+      maxInstances: 1     # raise to 2–3 ONLY after REDIS_URL is set, or the
+                          # spend cap + rate limiter fragment across instances
       targetMemoryPercent: 70
       targetCPUPercent: 70
     envVars:
