@@ -125,7 +125,15 @@ const FRAMEWORKS = {
 let MOVIES = [];
 try {
   const { BRODONAM_MOVIES } = require('./data/movies.js');
-  MOVIES = BRODONAM_MOVIES;
+  MOVIES = [...BRODONAM_MOVIES];
+  try {
+    const { PUBLIC_DOMAIN_FILMS } = require('./data/public-domain.js');
+    const have = new Set(MOVIES.map(m => m.id));
+    for (const f of PUBLIC_DOMAIN_FILMS) if (!have.has(f.id)) MOVIES.push(f);
+    log.info({ pd: PUBLIC_DOMAIN_FILMS.length }, 'Merged public-domain films');
+  } catch (e) {
+    log.warn({ err: e.message }, 'Could not load public-domain.js');
+  }
   log.info({ count: MOVIES.length }, 'Loaded films');
 } catch (e) {
   log.warn({ err: e.message }, 'Could not load movies.js');

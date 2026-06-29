@@ -45,7 +45,18 @@
       cursor: pointer;
     }
 
-    /* Simulated film gradient (replaces real <video> element) */
+    /* Real public-domain film */
+    #filmVideo {
+      position: absolute; inset: 0;
+      width: 100%; height: 100%;
+      object-fit: contain;          /* letterbox classic 4:3 films cleanly */
+      background: #000;
+      z-index: 1;
+      transition: filter 1.2s ease;
+    }
+    #filmVideo.dimmed { filter: brightness(0.32); }
+
+    /* Simulated film gradient (fallback when no real source) */
     .video-bg {
       position: absolute; inset: 0;
       background: linear-gradient(135deg, #1a0828 0%, #0a1428 20%, #1a0a18 40%, #0a1a0a 65%, #1a1028 100%);
@@ -539,7 +550,9 @@
   <div class="video-area">
     <div class="video-canvas" id="videoCanvas" onclick="handleCanvasClick()">
 
-      <!-- Simulated film -->
+      <!-- Real film (public-domain) — shown only when MOVIE.source exists -->
+      <video id="filmVideo" playsinline preload="metadata" style="display:none"></video>
+      <!-- Simulated film (fallback for non-playable titles) -->
       <div class="video-bg" id="videoBg"></div>
       <div class="video-grain"></div>
       <div class="video-vignette"></div>
@@ -659,6 +672,7 @@
 </div><!-- /player-shell -->
 
 <script src="data/movies.js"></script>
+<script src="data/public-domain.js"></script>
 <script>
 /* ═══════════════════════════════
    MOVIE LOAD
@@ -726,14 +740,15 @@ document.title = `Brodonam — ${MOVIE.trigger}`;
 /* ═══════════════════════════════
    PLAYBACK STATE
 ═══════════════════════════════ */
-let isPlaying         = true;
+const PLAYABLE        = !!MOVIE.source;   // real public-domain film vs. simulated
+let isPlaying         = !PLAYABLE;        // real films start paused (autoplay rules); sim starts playing
 let progress          = 0;         // 0–100%
 let sidebarOpen       = true;
 let ctrlsTimeout;
 let narrationActive   = false;
 let insightTriggered  = {};        // pct → boolean
 
-const TOTAL_SECS = MOVIE.duration.split(' ').reduce((acc, t, i, a) => {
+let TOTAL_SECS = MOVIE.duration.split(' ').reduce((acc, t, i, a) => {
   const n = parseInt(t);
   if (a[i+1] === 'hr')  return acc + n * 3600;
   if (a[i+1] === 'min') return acc + n * 60;
@@ -779,25 +794,32 @@ if (MOVIE.insights?.length) {
 /* ═══════════════════════════════
    PLAYBACK SIMULATION
 ═══════════════════════════════ */
+function finishFilm() {
+  /* Save viewing session to localStorage, then go to reflection */
+  try {
+    const saved = JSON.parse(localStorage.getItem('brodonam_sessions') || '[]');
+    saved.unshift({
+      movieId:    MOVIE.id,
+      trigger:    MOVIE.trigger,
+      categories: MOVIE.categories,
+      date:       new Date().toISOString(),
+      insights:   Object.keys(insightTriggered).length
+    });
+    localStorage.setItem('brodonam_sessions', JSON.stringify(saved.slice(0, 20)));
+    localStorage.setItem('brodonam_last_movie', JSON.stringify({ id: MOVIE.id, trigger: MOVIE.trigger, categories: MOVIE.categories }));
+  } catch(e) {}
+  setTimeout(() => location.href='reflection.html', 1500);
+}
+
+/* Simulated playback — only for titles without a real source.
+   Real films drive `progress` from the <video> element (see setup block). */
 const tick = setInterval(() => {
+  if (PLAYABLE) return;            // real video drives progress instead
   if (!isPlaying || narrationActive) return;
   progress += 0.022;
   if (progress >= 100) {
     clearInterval(tick);
-    /* Save viewing session to localStorage */
-    try {
-      const saved = JSON.parse(localStorage.getItem('brodonam_sessions') || '[]');
-      saved.unshift({
-        movieId:    MOVIE.id,
-        trigger:    MOVIE.trigger,
-        categories: MOVIE.categories,
-        date:       new Date().toISOString(),
-        insights:   Object.keys(insightTriggered).length
-      });
-      localStorage.setItem('brodonam_sessions', JSON.stringify(saved.slice(0, 20)));
-      localStorage.setItem('brodonam_last_movie', JSON.stringify({ id: MOVIE.id, trigger: MOVIE.trigger, categories: MOVIE.categories }));
-    } catch(e) {}
-    setTimeout(() => location.href='reflection.html', 1500);
+    finishFilm();
   }
   document.getElementById('progressFill').style.width = progress + '%';
   updateTime();
@@ -810,6 +832,48 @@ function updateTime() {
   const tot = TOTAL_SECS;
   const fmt = s => `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;
   document.getElementById('timeDisplay').textContent = `${fmt(cur)} / ${fmt(tot)}`;
+}
+
+/* ═══════════════════════════════
+   REAL VIDEO (public-domain films)
+   Drives `progress` from the <video> so all the existing scene-intelligence
+   (markers, approach glow, insight triggers, time display) works unchanged.
+═══════════════════════════════ */
+const filmVideo = document.getElementById('filmVideo');
+if (PLAYABLE) {
+  document.getElementById('videoBg').style.display = 'none';
+  filmVideo.style.display = 'block';
+  filmVideo.poster = MOVIE.poster || '';
+  filmVideo.src = MOVIE.source;
+
+  filmVideo.addEventListener('loadedmetadata', () => {
+    if (filmVideo.duration && isFinite(filmVideo.duration)) {
+      TOTAL_SECS = Math.floor(filmVideo.duration);
+      updateTime();
+    }
+  });
+
+  filmVideo.addEventListener('timeupdate', () => {
+    if (!filmVideo.duration) return;
+    progress = (filmVideo.currentTime / filmVideo.duration) * 100;
+    document.getElementById('progressFill').style.width = progress + '%';
+    updateTime();
+    checkApproachingInsight();
+    checkInsightTrigger();
+  });
+
+  // Keep play/pause UI in sync no matter how playback state changes.
+  filmVideo.addEventListener('play',  () => { isPlaying = true;  document.getElementById('playBtn').textContent = '⏸ Pause'; });
+  filmVideo.addEventListener('pause', () => { if (!narrationActive) { isPlaying = false; document.getElementById('playBtn').textContent = '▶ Play'; } });
+  filmVideo.addEventListener('ended', finishFilm);
+  filmVideo.addEventListener('error', () => {
+    // Stream failed — fall back to the simulated gradient so the page still works.
+    filmVideo.style.display = 'none';
+    document.getElementById('videoBg').style.display = '';
+  });
+
+  // Start paused with the title showing; the user presses play (autoplay-safe).
+  document.getElementById('playBtn').textContent = '▶ Play';
 }
 
 /* ═══════════════════════════════
@@ -854,6 +918,7 @@ function checkInsightTrigger() {
 function triggerInsight(ins, idx) {
   narrationActive = true;
   isPlaying = false;
+  if (PLAYABLE) { filmVideo.pause(); filmVideo.classList.add('dimmed'); }
   document.getElementById('videoBg').classList.add('paused', 'dimmed');
   document.getElementById('playBtn').textContent = '▶ Play';
 
@@ -917,6 +982,7 @@ function closeNarration() {
   document.getElementById('narrationOverlay').classList.remove('visible');
   document.getElementById('narrText').innerHTML = '';
   document.getElementById('narrSomatic').classList.remove('show');
+  if (PLAYABLE) { filmVideo.classList.remove('dimmed'); filmVideo.play().catch(()=>{}); }
   document.getElementById('videoBg').classList.remove('paused', 'dimmed');
   document.getElementById('playBtn').textContent = '⏸ Pause';
   document.getElementById('edgeLight').className = 'edge-light';
@@ -1315,6 +1381,13 @@ function addInsightToList(ins, idx) {
 ═══════════════════════════════ */
 function togglePlay() {
   if (narrationActive) return;
+  if (PLAYABLE) {
+    // The video's play/pause events keep isPlaying + the button label in sync.
+    if (filmVideo.paused) filmVideo.play().catch(()=>{}); else filmVideo.pause();
+    if (!filmVideo.paused) speechSynthesis.cancel();
+    showControls();
+    return;
+  }
   isPlaying = !isPlaying;
   document.getElementById('videoBg').classList.toggle('paused', !isPlaying);
   document.getElementById('playBtn').textContent = isPlaying ? '⏸ Pause' : '▶ Play';
@@ -1329,6 +1402,10 @@ function handleCanvasClick() {
 function seekTo(e) {
   const rect = e.currentTarget.getBoundingClientRect();
   progress = Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100));
+  if (PLAYABLE && filmVideo.duration) {
+    filmVideo.currentTime = (progress / 100) * filmVideo.duration;
+  }
+  document.getElementById('progressFill').style.width = progress + '%';
   updateTime();
 }
 
